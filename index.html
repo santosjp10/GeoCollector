@@ -20,6 +20,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Proj4js for coordinate conversion -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -202,6 +205,26 @@
         .uft-accent {
             color: #60a5fa;
         }
+
+        .coord-system-selector {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(15, 23, 42, 0.3) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .coord-display {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            letter-spacing: -0.5px;
+        }
+
+        .utm-zone-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            font-size: 0.7rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="text-white antialiased">
@@ -242,7 +265,7 @@
         <div class="glass-panel rounded-b-2xl rounded-t-none p-6 mb-6 shadow-xl border-t-0">
             
             <!-- App Header -->
-            <header class="mb-8 text-center pt-2">
+            <header class="mb-6 text-center pt-2">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary mb-4 shadow-lg shadow-primary/30">
                     <i class="fas fa-map-marker-alt text-2xl text-white"></i>
                 </div>
@@ -255,6 +278,63 @@
                     <span class="text-xs text-blue-200">Projeto Acadêmico</span>
                 </div>
             </header>
+
+            <!-- Coordinate System Selector -->
+            <div class="coord-system-selector rounded-xl p-4 mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="text-sm font-semibold text-blue-200 flex items-center gap-2">
+                        <i class="fas fa-globe-americas text-blue-400"></i>
+                        Sistema de Coordenadas
+                    </label>
+                    <span id="currentZone" class="utm-zone-badge hidden">Zona 22S</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="setCoordSystem('geographic')" id="btnGeo" 
+                        class="py-3 px-4 rounded-xl font-medium transition-all duration-300 flex flex-col items-center gap-1 border-2 border-primary bg-primary/20 text-white">
+                        <i class="fas fa-globe text-lg"></i>
+                        <span class="text-sm">Geográficas</span>
+                        <span class="text-xs opacity-70">Lat / Long</span>
+                    </button>
+                    
+                    <button onclick="setCoordSystem('utm')" id="btnUtm" 
+                        class="py-3 px-4 rounded-xl font-medium transition-all duration-300 flex flex-col items-center gap-1 border-2 border-transparent bg-slate-700/50 text-slate-300 hover:bg-slate-700">
+                        <i class="fas fa-map text-lg"></i>
+                        <span class="text-sm">UTM</span>
+                        <span class="text-xs opacity-70">X / Y (metros)</span>
+                    </button>
+                </div>
+
+                <!-- UTM Zone Selector (shown when UTM selected) -->
+                <div id="utmZoneSelector" class="mt-3 hidden">
+                    <label class="text-xs text-slate-400 mb-1 block">Zona UTM (Fuso)</label>
+                    <select id="utmZone" onchange="updateUTMZone()" class="glass-input w-full px-3 py-2 rounded-lg text-sm">
+                        <option value="22">Zona 22S (Tocantins/Pará)</option>
+                        <option value="23">Zona 23S (Maranhão/Piauí)</option>
+                        <option value="21">Zona 21S (Goiás/Mato Grosso)</option>
+                        <option value="24">Zona 24S (Bahia oeste)</option>
+                    </select>
+                    <p class="text-xs text-slate-500 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Gurupi-TO está na Zona 22S
+                    </p>
+                </div>
+            </div>
+
+            <!-- Coordinate Preview -->
+            <div id="coordPreview" class="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700 hidden">
+                <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Pré-visualização das Coordenadas</h4>
+                <div class="coord-display space-y-2">
+                    <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg">
+                        <span class="text-slate-400 text-xs" id="label1">Latitude:</span>
+                        <span class="text-primary font-bold" id="value1">--</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg">
+                        <span class="text-slate-400 text-xs" id="label2">Longitude:</span>
+                        <span class="text-primary font-bold" id="value2">--</span>
+                    </div>
+                </div>
+            </div>
 
             <!-- Main Action Card -->
             <div class="bg-slate-800/50 rounded-2xl p-6 mb-6 border border-slate-700">
@@ -338,11 +418,11 @@
                     Como usar
                 </h4>
                 <ul class="space-y-2 list-disc list-inside">
+                    <li>Escolha o sistema de coordenadas (Geográficas ou UTM) antes de coletar</li>
+                    <li>Para UTM, selecione a zona correta (Gurupi está na Zona 22S)</li>
                     <li>Permita o acesso à localização quando solicitado</li>
                     <li>Aguarde a precisão melhorar (menor número = melhor)</li>
-                    <li>Adicione nomes e categorias para organizar seus pontos</li>
-                    <li>Exporte como GeoJSON para usar no QGIS ou Google Earth</li>
-                    <li>Os dados ficam salvos no navegador até você limpar</li>
+                    <li>Exporte como GeoJSON para uso em SIG (QGIS, ArcGIS)</li>
                 </ul>
             </div>
         </div>
@@ -439,6 +519,20 @@
         let markers = [];
         let watchId = null;
         let isTracking = false;
+        
+        // Coordinate system state
+        let coordSystem = 'geographic'; // 'geographic' or 'utm'
+        let utmZone = 22; // Default zone for Gurupi-TO
+
+        // Define UTM projections for different zones (SIRGAS 2000)
+        const utmProjections = {
+            21: '+proj=utm +zone=21 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+            22: '+proj=utm +zone=22 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+            23: '+proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+            24: '+proj=utm +zone=24 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
+        };
+
+        const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -446,6 +540,7 @@
             renderPoints();
             updateStats();
             checkGPSPermission();
+            updateCoordSystemUI();
         });
 
         // Initialize Leaflet Map
@@ -453,16 +548,99 @@
             map = L.map('map', {
                 zoomControl: false,
                 attributionControl: false
-            }).setView([-11.7286, -49.0686], 13); // Coordenadas de Gurupi-TO como padrão
+            }).setView([-11.7286, -49.0686], 13); // Coordenadas de Gurupi-TO
 
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 19
             }).addTo(map);
 
-            // Add zoom control to bottom right
             L.control.zoom({
                 position: 'bottomright'
             }).addTo(map);
+        }
+
+        // Coordinate conversion functions
+        function toUTM(lat, lon, zone) {
+            try {
+                const projString = utmProjections[zone];
+                if (!projString) return null;
+                
+                const result = proj4(wgs84, projString, [lon, lat]);
+                return {
+                    x: result[0],
+                    y: result[1],
+                    zone: zone,
+                    hemisphere: 'S'
+                };
+            } catch (e) {
+                console.error('UTM conversion error:', e);
+                return null;
+            }
+        }
+
+        function toGeographic(x, y, zone) {
+            try {
+                const projString = utmProjections[zone];
+                if (!projString) return null;
+                
+                const result = proj4(projString, wgs84, [x, y]);
+                return {
+                    lat: result[1],
+                    lng: result[0]
+                };
+            } catch (e) {
+                console.error('Geographic conversion error:', e);
+                return null;
+            }
+        }
+
+        // Set coordinate system
+        function setCoordSystem(system) {
+            coordSystem = system;
+            updateCoordSystemUI();
+            
+            // Show/hide UTM zone selector
+            const zoneSelector = document.getElementById('utmZoneSelector');
+            const zoneBadge = document.getElementById('currentZone');
+            
+            if (system === 'utm') {
+                zoneSelector.classList.remove('hidden');
+                zoneBadge.classList.remove('hidden');
+                zoneBadge.textContent = `Zona ${utmZone}S`;
+            } else {
+                zoneSelector.classList.add('hidden');
+                zoneBadge.classList.add('hidden');
+            }
+            
+            // Re-render points to show in new system
+            renderPoints();
+            showToast(`Sistema alterado para: ${system === 'geographic' ? 'Coordenadas Geográficas' : 'UTM Zona ' + utmZone + 'S'}`);
+        }
+
+        function updateUTMZone() {
+            utmZone = parseInt(document.getElementById('utmZone').value);
+            document.getElementById('currentZone').textContent = `Zona ${utmZone}S`;
+            renderPoints();
+            showToast(`Zona UTM alterada para: ${utmZone}S`);
+        }
+
+        function updateCoordSystemUI() {
+            const btnGeo = document.getElementById('btnGeo');
+            const btnUtm = document.getElementById('btnUtm');
+            
+            if (coordSystem === 'geographic') {
+                btnGeo.classList.add('border-primary', 'bg-primary/20', 'text-white');
+                btnGeo.classList.remove('border-transparent', 'bg-slate-700/50', 'text-slate-300');
+                
+                btnUtm.classList.remove('border-primary', 'bg-primary/20', 'text-white');
+                btnUtm.classList.add('border-transparent', 'bg-slate-700/50', 'text-slate-300');
+            } else {
+                btnUtm.classList.add('border-primary', 'bg-primary/20', 'text-white');
+                btnUtm.classList.remove('border-transparent', 'bg-slate-700/50', 'text-slate-300');
+                
+                btnGeo.classList.remove('border-primary', 'bg-primary/20', 'text-white');
+                btnGeo.classList.add('border-transparent', 'bg-slate-700/50', 'text-slate-300');
+            }
         }
 
         // Check GPS Permission
@@ -473,10 +651,39 @@
             }
             
             navigator.geolocation.getCurrentPosition(
-                () => showStatus('active', 'GPS Ativo'),
+                (position) => {
+                    showStatus('active', 'GPS Ativo');
+                    updateCoordPreview(position.coords.latitude, position.coords.longitude);
+                },
                 () => showStatus('error', 'Permissão Negada'),
                 { enableHighAccuracy: true }
             );
+        }
+
+        // Update coordinate preview
+        function updateCoordPreview(lat, lng) {
+            const preview = document.getElementById('coordPreview');
+            const label1 = document.getElementById('label1');
+            const label2 = document.getElementById('label2');
+            const value1 = document.getElementById('value1');
+            const value2 = document.getElementById('value2');
+            
+            preview.classList.remove('hidden');
+            
+            if (coordSystem === 'geographic') {
+                label1.textContent = 'Latitude:';
+                label2.textContent = 'Longitude:';
+                value1.textContent = lat.toFixed(6) + '°';
+                value2.textContent = lng.toFixed(6) + '°';
+            } else {
+                const utm = toUTM(lat, lng, utmZone);
+                if (utm) {
+                    label1.textContent = 'Easting (X):';
+                    label2.textContent = 'Northing (Y):';
+                    value1.textContent = Math.round(utm.x) + ' m';
+                    value2.textContent = Math.round(utm.y) + ' m';
+                }
+            }
         }
 
         // Update GPS Status UI
@@ -502,16 +709,26 @@
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Calculate UTM coordinates
+                    const utmCoords = toUTM(lat, lng, utmZone);
+                    
                     const point = {
                         id: Date.now(),
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
+                        lat: lat,
+                        lng: lng,
+                        utmX: utmCoords ? utmCoords.x : null,
+                        utmY: utmCoords ? utmCoords.y : null,
+                        utmZone: utmZone,
                         accuracy: position.coords.accuracy,
                         altitude: position.coords.altitude,
                         timestamp: new Date().toISOString(),
                         name: `Ponto ${points.length + 1}`,
                         category: 'other',
-                        description: ''
+                        description: '',
+                        coordSystem: coordSystem // Store which system was used
                     };
 
                     points.unshift(point);
@@ -519,6 +736,7 @@
                     renderPoints();
                     updateStats();
                     updateMap();
+                    updateCoordPreview(lat, lng);
                     
                     showStatus('active', 'GPS Ativo');
                     createRipple(btn);
@@ -527,8 +745,7 @@
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-crosshairs text-2xl"></i><span>Capturar Localização Atual</span>';
                     
-                    // Show success feedback
-                    showToast('Localização capturada com sucesso!');
+                    showToast(`Localização capturada em ${coordSystem === 'geographic' ? 'Coordenadas Geográficas' : 'UTM Zona ' + utmZone + 'S'}!`);
                 },
                 (error) => {
                     showStatus('error', 'Erro no GPS');
@@ -560,16 +777,24 @@
 
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const utmCoords = toUTM(lat, lng, utmZone);
+                    
                     const point = {
                         id: Date.now(),
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
+                        lat: lat,
+                        lng: lng,
+                        utmX: utmCoords ? utmCoords.x : null,
+                        utmY: utmCoords ? utmCoords.y : null,
+                        utmZone: utmZone,
                         accuracy: position.coords.accuracy,
                         altitude: position.coords.altitude,
                         timestamp: new Date().toISOString(),
                         name: `Track ${points.length + 1}`,
                         category: 'other',
-                        description: 'Auto-capturado'
+                        description: 'Auto-capturado',
+                        coordSystem: coordSystem
                     };
 
                     points.unshift(point);
@@ -577,6 +802,7 @@
                     renderPoints();
                     updateStats();
                     updateMap();
+                    updateCoordPreview(lat, lng);
                     
                     document.getElementById('currentAccuracy').textContent = 
                         Math.round(position.coords.accuracy) + 'm';
@@ -608,6 +834,36 @@
             localStorage.setItem('geoPoints', JSON.stringify(points));
         }
 
+        // Format coordinates for display based on current system
+        function formatCoords(point) {
+            if (coordSystem === 'geographic') {
+                return {
+                    main: `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`,
+                    sub: point.utmX ? `UTM: ${Math.round(point.utmX)}, ${Math.round(point.utmY)}` : null,
+                    icon: 'fa-globe',
+                    label: 'Lat/Long'
+                };
+            } else {
+                if (point.utmX && point.utmY) {
+                    return {
+                        main: `${Math.round(point.utmX)} m E, ${Math.round(point.utmY)} m N`,
+                        sub: `Lat: ${point.lat.toFixed(6)}, Long: ${point.lng.toFixed(6)}`,
+                        icon: 'fa-map',
+                        label: `UTM Zona ${point.utmZone || utmZone}S`
+                    };
+                } else {
+                    // Convert on the fly if not stored
+                    const utm = toUTM(point.lat, point.lng, utmZone);
+                    return {
+                        main: utm ? `${Math.round(utm.x)} m E, ${Math.round(utm.y)} m N` : 'Erro conv.',
+                        sub: `Lat: ${point.lat.toFixed(6)}, Long: ${point.lng.toFixed(6)}`,
+                        icon: 'fa-map',
+                        label: `UTM Zona ${utmZone}S`
+                    };
+                }
+            }
+        }
+
         // Render Points List
         function renderPoints() {
             const container = document.getElementById('pointsList');
@@ -617,7 +873,7 @@
                     <div class="text-center text-slate-500 py-8">
                         <i class="fas fa-map-marked-alt text-4xl mb-3 opacity-50"></i>
                         <p>Nenhum ponto coletado ainda</p>
-                        <p class="text-sm mt-1">Clique em "Capturar" para começar</p>
+                        <p class="text-sm mt-1">Selecione o sistema de coordenadas e clique em "Capturar"</p>
                     </div>
                 `;
                 return;
@@ -626,7 +882,7 @@
             container.innerHTML = points.map((point, index) => {
                 const date = new Date(point.timestamp);
                 const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                const dateStr = date.toLocaleDateString('pt-BR');
+                const coords = formatCoords(point);
                 
                 const catColors = {
                     monument: 'cat-monument',
@@ -651,12 +907,19 @@
                             </div>
                             <div class="text-xs text-slate-400 space-y-1">
                                 <div class="flex items-center gap-2">
-                                    <i class="fas fa-map-pin text-primary"></i>
-                                    <span>${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}</span>
+                                    <i class="fas ${coords.icon} text-primary"></i>
+                                    <span class="coord-display text-primary font-mono">${coords.main}</span>
                                 </div>
-                                <div class="flex items-center gap-4">
+                                ${coords.sub ? `
+                                <div class="flex items-center gap-2 text-slate-500">
+                                    <i class="fas fa-exchange-alt text-xs"></i>
+                                    <span class="coord-display">${coords.sub}</span>
+                                </div>
+                                ` : ''}
+                                <div class="flex items-center gap-4 mt-1">
                                     <span><i class="fas fa-bullseye text-slate-500"></i> ±${Math.round(point.accuracy)}m</span>
                                     <span><i class="fas fa-clock text-slate-500"></i> ${timeStr}</span>
+                                    <span class="utm-zone-badge">${coords.label}</span>
                                 </div>
                                 ${point.description ? `<p class="text-slate-300 mt-1 italic">${point.description}</p>` : ''}
                             </div>
@@ -679,7 +942,6 @@
 
         // Update Map Markers
         function updateMap() {
-            // Clear existing markers
             markers.forEach(m => map.removeLayer(m));
             markers = [];
 
@@ -698,10 +960,12 @@
                     fillOpacity: 0.8
                 }).addTo(map);
                 
+                const coords = formatCoords(point);
                 marker.bindPopup(`
                     <div class="text-slate-800">
                         <strong>${point.name}</strong><br>
-                        <small>Accuracy: ${Math.round(point.accuracy)}m</small>
+                        <small>${coords.main}</small><br>
+                        <small>Precisão: ${Math.round(point.accuracy)}m</small>
                     </div>
                 `);
                 
@@ -809,9 +1073,14 @@
             if (format === 'geojson') {
                 const geojson = {
                     type: 'FeatureCollection',
-                    features: points.map(p => ({
-                        type: 'Feature',
+                    crs: {
+                        type: 'name',
                         properties: {
+                            name: coordSystem === 'utm' ? `EPSG:31982` : 'EPSG:4326'
+                        }
+                    },
+                    features: points.map(p => {
+                        const props = {
                             name: p.name,
                             category: p.category,
                             description: p.description,
@@ -820,30 +1089,46 @@
                             institution: 'UFT - Universidade Federal do Tocantins',
                             course: 'Agronomia',
                             discipline: 'Sensoriamento Remoto e SIG',
-                            campus: 'Gurupi'
-                        },
-                        geometry: {
-                            type: 'Point',
-                            coordinates: [p.lng, p.lat, p.altitude || 0]
+                            campus: 'Gurupi',
+                            coord_system: coordSystem,
+                            utm_zone: p.utmZone || utmZone
+                        };
+                        
+                        if (coordSystem === 'utm' && p.utmX && p.utmY) {
+                            props.easting = p.utmX;
+                            props.northing = p.utmY;
                         }
-                    }))
+                        
+                        return {
+                            type: 'Feature',
+                            properties: props,
+                            geometry: {
+                                type: 'Point',
+                                coordinates: [p.lng, p.lat, p.altitude || 0]
+                            }
+                        };
+                    })
                 };
                 content = JSON.stringify(geojson, null, 2);
                 mimeType = 'application/geo+json';
-                filename = `pontos-gps-uft-gurupi-${timestamp}.geojson`;
+                filename = `pontos-gps-uft-gurupi-${coordSystem}-${timestamp}.geojson`;
             } else {
                 // CSV
-                const headers = ['ID', 'Nome', 'Latitude', 'Longitude', 'Altitude', 'Precisao', 'Categoria', 'Descricao', 'Data/Hora', 'Instituicao', 'Curso', 'Disciplina', 'Campus'];
+                const headers = ['ID', 'Nome', 'Latitude', 'Longitude', 'UTM_X_Easting', 'UTM_Y_Northing', 'UTM_Zona', 'Altitude', 'Precisao', 'Categoria', 'Descricao', 'Data/Hora', 'Sistema_Coordenadas', 'Instituicao', 'Curso', 'Disciplina', 'Campus'];
                 const rows = points.map(p => [
                     p.id,
                     `"${p.name}"`,
                     p.lat,
                     p.lng,
+                    p.utmX || '',
+                    p.utmY || '',
+                    p.utmZone || utmZone,
                     p.altitude || '',
                     p.accuracy,
                     p.category,
                     `"${p.description || ''}"`,
                     p.timestamp,
+                    coordSystem,
                     'UFT',
                     'Agronomia',
                     'Sensoriamento Remoto e SIG',
@@ -851,7 +1136,7 @@
                 ]);
                 content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
                 mimeType = 'text/csv';
-                filename = `pontos-gps-uft-gurupi-${timestamp}.csv`;
+                filename = `pontos-gps-uft-gurupi-${coordSystem}-${timestamp}.csv`;
             }
 
             // Create download
