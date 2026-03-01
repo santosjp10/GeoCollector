@@ -100,6 +100,15 @@
             transform: scale(0.95);
         }
         
+        .btn-secondary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:active {
+            transform: scale(0.95);
+        }
+        
         .btn-danger {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         }
@@ -270,7 +279,6 @@
             animation: pulse-fast 1.5s infinite;
         }
 
-        /* Tab Navigation */
         .tab-btn {
             position: relative;
             transition: all 0.3s ease;
@@ -304,7 +312,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Area calculation specific styles */
         .area-result {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
             border: 2px solid rgba(16, 185, 129, 0.5);
@@ -331,6 +338,11 @@
             justify-content: center;
             font-size: 0.75rem;
             font-weight: bold;
+        }
+
+        .export-panel {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
     </style>
 </head>
@@ -663,6 +675,47 @@
                     </div>
                 </div>
 
+                <!-- Export Panel (shown after calculation) -->
+                <div id="exportPanel" class="hidden export-panel rounded-xl p-6 mb-6">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fas fa-file-export text-secondary"></i>
+                        Exportar Polígono
+                    </h3>
+                    
+                    <p class="text-xs text-slate-400 mb-4">
+                        Exporte o polígono calculado para uso em sistemas GIS (QGIS, ArcGIS, Google Earth) ou planilhas.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button onclick="exportPolygon('geojson')" class="btn-primary py-3 rounded-xl font-medium flex items-center justify-center gap-2 text-sm">
+                            <i class="fas fa-file-code"></i>
+                            <span>GeoJSON (Polygon)</span>
+                        </button>
+                        <button onclick="exportPolygon('kml')" class="btn-secondary py-3 rounded-xl font-medium flex items-center justify-center gap-2 text-sm text-white">
+                            <i class="fas fa-globe"></i>
+                            <span>KML (Google Earth)</span>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="exportPolygon('csv')" class="glass-input py-3 rounded-xl font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 text-sm">
+                            <i class="fas fa-file-csv text-primary"></i>
+                            <span>CSV (Vértices)</span>
+                        </button>
+                        <button onclick="exportPolygon('report')" class="glass-input py-3 rounded-xl font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 text-sm">
+                            <i class="fas fa-file-alt text-accent"></i>
+                            <span>Relatório TXT</span>
+                        </button>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-slate-900/30 rounded-lg border border-slate-700">
+                        <h4 class="text-xs font-semibold text-slate-300 mb-2">Informações do Polígono:</h4>
+                        <div id="polygonMetadata" class="text-xs text-slate-400 space-y-1 font-mono">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Selection Hint -->
                 <div id="selectionHint" class="bg-slate-800/50 rounded-xl p-4 mb-4 border border-dashed border-slate-600 text-center">
                     <i class="fas fa-hand-pointer text-3xl text-slate-500 mb-2"></i>
@@ -770,10 +823,10 @@
     <script>
         // State management
         let points = JSON.parse(localStorage.getItem('geoPoints')) || [];
-        let selectedPoints = []; // For area calculation
+        let selectedPoints = [];
         let currentEditId = null;
         let map = null;
-        let mapArea = null; // Map for area tab
+        let mapArea = null;
         let markers = [];
         let polygonLayer = null;
         let watchId = null;
@@ -782,6 +835,9 @@
         let isMonitoring = false;
         let coordSystem = 'geographic';
         let utmZone = 22;
+        
+        // Store last calculated area for export
+        let lastCalculatedArea = null;
 
         // UTM Projections
         const utmProjections = {
@@ -804,20 +860,16 @@
 
         // Tab Switching
         function switchTab(tabName) {
-            // Update buttons
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
             
-            // Update content
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(`content-${tabName}`).classList.add('active');
             
-            // Initialize area map if needed
             if (tabName === 'area' && !mapArea) {
                 setTimeout(initAreaMap, 100);
             }
             
-            // Refresh area map if switching to area tab
             if (tabName === 'area' && mapArea) {
                 setTimeout(() => {
                     mapArea.invalidateSize();
@@ -1374,10 +1426,8 @@
             const existingIndex = selectedPoints.findIndex(p => p.id === pointId);
             
             if (existingIndex >= 0) {
-                // Remove if already selected
                 selectedPoints.splice(existingIndex, 1);
             } else {
-                // Add to selection
                 const point = points.find(p => p.id === pointId);
                 if (point) {
                     selectedPoints.push(point);
@@ -1396,17 +1446,18 @@
             renderAreaPointsList();
             updateAreaMap();
             document.getElementById('areaResults').classList.add('hidden');
+            document.getElementById('exportPanel').classList.add('hidden');
             document.getElementById('selectionHint').classList.remove('hidden');
+            lastCalculatedArea = null;
         }
 
-        // Auto Select Polygon (convex hull approximation - selects all points)
+        // Auto Select Polygon
         function autoSelectPolygon() {
             if (points.length < 3) {
                 showToast('Colete pelo menos 3 pontos primeiro', 'error');
                 return;
             }
             
-            // Select all points that have UTM coordinates
             const validPoints = points.filter(p => p.utmX && p.utmY);
             
             if (validPoints.length < 3) {
@@ -1437,7 +1488,6 @@
                 }
             }
             
-            // Update polygon info
             const info = document.getElementById('polygonInfo');
             if (count === 0) {
                 info.textContent = 'Nenhum polígono formado';
@@ -1454,7 +1504,6 @@
         function updateAreaMap() {
             if (!mapArea) return;
             
-            // Clear existing layers
             mapArea.eachLayer((layer) => {
                 if (layer instanceof L.Marker || layer instanceof L.Polygon || layer instanceof L.Polyline) {
                     mapArea.removeLayer(layer);
@@ -1463,11 +1512,10 @@
             
             if (selectedPoints.length === 0) return;
             
-            // Add markers for selected points
             const latlngs = [];
             
             selectedPoints.forEach((point, index) => {
-                const color = '#10b981'; // Green for selected
+                const color = '#10b981';
                 const marker = L.circleMarker([point.lat, point.lng], {
                     radius: 10,
                     fillColor: color,
@@ -1487,9 +1535,7 @@
                 latlngs.push([point.lat, point.lng]);
             });
             
-            // Draw polygon if 3+ points
             if (selectedPoints.length >= 3) {
-                // Close the polygon
                 const closedLatLngs = [...latlngs, latlngs[0]];
                 
                 const polygon = L.polygon(closedLatLngs, {
@@ -1500,10 +1546,8 @@
                     fillOpacity: 0.2
                 }).addTo(mapArea);
                 
-                // Fit bounds
                 mapArea.fitBounds(polygon.getBounds().pad(0.1));
             } else if (selectedPoints.length >= 2) {
-                // Draw line if 2 points
                 L.polyline(latlngs, {
                     color: '#10b981',
                     weight: 3,
@@ -1517,14 +1561,13 @@
             }
         }
 
-        // Calculate Area using Shoelace Formula (for UTM coordinates)
+        // Calculate Area using Shoelace Formula
         function calculateArea() {
             if (selectedPoints.length < 3) {
                 showToast('Selecione pelo menos 3 pontos', 'error');
                 return;
             }
             
-            // Check if all points have UTM coordinates
             const validPoints = selectedPoints.filter(p => p.utmX && p.utmY);
             
             if (validPoints.length < 3) {
@@ -1532,38 +1575,41 @@
                 return;
             }
             
-            // Check if all points are in the same UTM zone
             const zones = [...new Set(validPoints.map(p => p.utmZone || utmZone))];
             if (zones.length > 1) {
                 showToast('Todos os pontos devem estar na mesma zona UTM', 'error');
                 return;
             }
             
-            // Calculate area using Shoelace formula
-            // Area = 0.5 * |sum(x_i * y_{i+1} - x_{i+1} * y_i)|
             let area = 0;
             let perimeter = 0;
             const n = validPoints.length;
             
             for (let i = 0; i < n; i++) {
                 const current = validPoints[i];
-                const next = validPoints[(i + 1) % n]; // Wrap around to first point
+                const next = validPoints[(i + 1) % n];
                 
-                // Shoelace formula contribution
                 area += (current.utmX * next.utmY) - (next.utmX * current.utmY);
                 
-                // Perimeter calculation (Euclidean distance)
                 const dx = next.utmX - current.utmX;
                 const dy = next.utmY - current.utmY;
                 perimeter += Math.sqrt(dx * dx + dy * dy);
             }
             
-            area = Math.abs(area) / 2; // m²
-            
-            // Convert to hectares (1 ha = 10,000 m²)
+            area = Math.abs(area) / 2;
             const areaHa = area / 10000;
             
-            // Display results
+            // Store for export
+            lastCalculatedArea = {
+                area_m2: area,
+                area_ha: areaHa,
+                perimeter: perimeter,
+                vertices: n,
+                zone: zones[0],
+                points: validPoints,
+                timestamp: new Date().toISOString()
+            };
+            
             document.getElementById('areaM2').textContent = area.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
             document.getElementById('areaHa').textContent = areaHa.toLocaleString('pt-BR', { maximumFractionDigits: 4 });
             document.getElementById('perimeter').textContent = perimeter.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' m';
@@ -1571,11 +1617,220 @@
             document.getElementById('utmZoneUsed').textContent = `Zona ${zones[0]}S (SIRGAS 2000)`;
             
             document.getElementById('areaResults').classList.remove('hidden');
+            document.getElementById('exportPanel').classList.remove('hidden');
             
-            // Scroll to results
+            // Update metadata
+            document.getElementById('polygonMetadata').innerHTML = `
+                <div><span class="text-slate-500">Área:</span> ${areaHa.toFixed(4)} ha (${area.toFixed(2)} m²)</div>
+                <div><span class="text-slate-500">Perímetro:</span> ${perimeter.toFixed(2)} m</div>
+                <div><span class="text-slate-500">Vértices:</span> ${n}</div>
+                <div><span class="text-slate-500">Zona UTM:</span> ${zones[0]}S</div>
+                <div><span class="text-slate-500">Data:</span> ${new Date().toLocaleString('pt-BR')}</div>
+            `;
+            
             document.getElementById('areaResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
             showToast(`Área calculada: ${areaHa.toFixed(4)} ha`);
+        }
+
+        // EXPORT POLYGON FUNCTION
+        function exportPolygon(format) {
+            if (!lastCalculatedArea) {
+                showToast('Calcule a área primeiro', 'error');
+                return;
+            }
+            
+            const timestamp = new Date().toISOString().split('T')[0];
+            const timeStr = new Date().toISOString().replace(/[:.]/g, '-');
+            let content, mimeType, filename, extension;
+            
+            const { area_m2, area_ha, perimeter, vertices, zone, points: polyPoints } = lastCalculatedArea;
+            
+            switch(format) {
+                case 'geojson':
+                    // GeoJSON Polygon
+                    const coordinates = polyPoints.map(p => [p.lng, p.lat]);
+                    coordinates.push(coordinates[0]); // Close the polygon
+                    
+                    const geojson = {
+                        type: 'FeatureCollection',
+                        features: [{
+                            type: 'Feature',
+                            properties: {
+                                name: `Poligono_Area_${timestamp}`,
+                                area_m2: area_m2,
+                                area_ha: area_ha,
+                                perimeter_m: perimeter,
+                                vertices: vertices,
+                                utm_zone: zone,
+                                datum: 'SIRGAS 2000',
+                                calculated_at: new Date().toISOString(),
+                                institution: 'UFT - Universidade Federal do Tocantins',
+                                course: 'Agronomia',
+                                discipline: 'Sensoriamento Remoto e SIG',
+                                campus: 'Gurupi'
+                            },
+                            geometry: {
+                                type: 'Polygon',
+                                coordinates: [coordinates]
+                            }
+                        }]
+                    };
+                    
+                    content = JSON.stringify(geojson, null, 2);
+                    mimeType = 'application/geo+json';
+                    extension = 'geojson';
+                    filename = `poligono_area_uft_gurupi_${timestamp}.${extension}`;
+                    break;
+                    
+                case 'kml':
+                    // KML for Google Earth
+                    const kmlCoordinates = polyPoints.map(p => `${p.lng},${p.lat},0`).join(' ');
+                    // Close the polygon
+                    const firstPoint = polyPoints[0];
+                    const closedKmlCoords = kmlCoordinates + ` ${firstPoint.lng},${firstPoint.lat},0`;
+                    
+                    content = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Polígono de Área - UFT Gurupi</name>
+    <description>
+      Área: ${area_ha.toFixed(4)} ha
+      Perímetro: ${perimeter.toFixed(2)} m
+      Vértices: ${vertices}
+      Zona UTM: ${zone}S
+    </description>
+    <Style id="polygonStyle">
+      <PolyStyle>
+        <color>7f00ff00</color>
+        <fill>1</fill>
+        <outline>1</outline>
+      </PolyStyle>
+      <LineStyle>
+        <color>ff00ff00</color>
+        <width>3</width>
+      </LineStyle>
+    </Style>
+    <Placemark>
+      <name>Área Calculada</name>
+      <styleUrl>#polygonStyle</styleUrl>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>clampToGround</altitudeMode>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>${closedKmlCoords}</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    ${polyPoints.map((p, i) => `
+    <Placemark>
+      <name>Vértice ${i + 1}: ${p.name}</name>
+      <description>
+        X: ${p.utmX.toFixed(2)} m
+        Y: ${p.utmY.toFixed(2)} m
+        Precisão: ±${p.accuracy}m
+      </description>
+      <Point>
+        <coordinates>${p.lng},${p.lat},0</coordinates>
+      </Point>
+    </Placemark>`).join('')}
+  </Document>
+</kml>`;
+                    mimeType = 'application/vnd.google-earth.kml+xml';
+                    extension = 'kml';
+                    filename = `poligono_area_uft_gurupi_${timestamp}.${extension}`;
+                    break;
+                    
+                case 'csv':
+                    // CSV with vertices
+                    const headers = ['Vertice', 'Nome', 'Latitude', 'Longitude', 'UTM_X', 'UTM_Y', 'Precisao_m', 'DataHora'];
+                    const rows = polyPoints.map((p, i) => [
+                        i + 1,
+                        `"${p.name}"`,
+                        p.lat,
+                        p.lng,
+                        p.utmX,
+                        p.utmY,
+                        p.accuracy,
+                        p.timestamp
+                    ]);
+                    
+                    // Add summary row
+                    rows.push(['', '', '', '', '', '', '', '']);
+                    rows.push(['RESUMO', '', '', '', '', '', '', '']);
+                    rows.push(['Area_m2', area_m2, '', '', '', '', '', '']);
+                    rows.push(['Area_ha', area_ha, '', '', '', '', '', '']);
+                    rows.push(['Perimetro_m', perimeter, '', '', '', '', '', '']);
+                    rows.push(['Zona_UTM', zone, '', '', '', '', '', '']);
+                    rows.push(['Data_Calculo', new Date().toISOString(), '', '', '', '', '', '']);
+                    
+                    content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                    mimeType = 'text/csv';
+                    extension = 'csv';
+                    filename = `vertices_poligono_uft_gurupi_${timestamp}.${extension}`;
+                    break;
+                    
+                case 'report':
+                    // Text report
+                    content = `RELATÓRIO DE CÁLCULO DE ÁREA
+================================
+Instituição: UFT - Universidade Federal do Tocantins
+Curso: Agronomia
+Disciplina: Sensoriamento Remoto e SIG
+Campus: Gurupi
+Data: ${new Date().toLocaleString('pt-BR')}
+
+DADOS DO POLÍGONO
+-----------------
+Área: ${area_m2.toFixed(2)} m²
+Área: ${area_ha.toFixed(4)} ha
+Perímetro: ${perimeter.toFixed(2)} m
+Número de vértices: ${vertices}
+Zona UTM: ${zone}S
+Datum: SIRGAS 2000
+
+COORDENADAS DOS VÉRTICES
+------------------------
+${polyPoints.map((p, i) => `
+VÉRTICE ${i + 1}: ${p.name}
+  Latitude:  ${p.lat.toFixed(6)}°
+  Longitude: ${p.lng.toFixed(6)}°
+  UTM X:     ${p.utmX.toFixed(3)} m
+  UTM Y:     ${p.utmY.toFixed(3)} m
+  Precisão:  ±${p.accuracy} m
+  Data:      ${new Date(p.timestamp).toLocaleString('pt-BR')}
+`).join('\n')}
+
+METODOLOGIA
+-----------
+Cálculo realizado utilizando a fórmula do Shoelace (Gauss) 
+aplicada às coordenadas UTM (Sistema de Coordenadas Planas).
+Precisão métrica adequada para cadastro de propriedades rurais 
+e delimitação de talhões agrícolas.
+
+Responsável: _________________________
+Data: _________________________
+`;
+                    mimeType = 'text/plain';
+                    extension = 'txt';
+                    filename = `relatorio_area_uft_gurupi_${timestamp}.${extension}`;
+                    break;
+            }
+            
+            // Download file
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast(`Polígono exportado como ${format.toUpperCase()}!`);
         }
 
         // Edit, Delete, Clear functions
@@ -1617,7 +1872,6 @@
         function deletePoint(id) {
             if (confirm('Tem certeza que deseja excluir este ponto?')) {
                 points = points.filter(p => p.id !== id);
-                // Also remove from selection if present
                 selectedPoints = selectedPoints.filter(p => p.id !== id);
                 savePoints();
                 renderPoints();
@@ -1664,7 +1918,7 @@
             }
         }
 
-        // Export
+        // Export Points (not polygon)
         function exportData(format) {
             if (points.length === 0) {
                 showToast('Nenhum dado para exportar', 'error');
