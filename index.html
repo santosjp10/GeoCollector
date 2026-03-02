@@ -66,10 +66,9 @@
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             min-height: 100vh;
             overflow-x: hidden;
-            padding-bottom: 80px; /* Space for bottom nav */
+            padding-bottom: 80px;
         }
         
-        /* Native App Feel */
         .app-container {
             max-width: 100%;
             margin: 0 auto;
@@ -82,7 +81,6 @@
             }
         }
         
-        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -106,6 +104,7 @@
             transition: all 0.2s ease;
             border-radius: 12px;
             min-width: 64px;
+            position: relative;
         }
         
         .nav-item.active {
@@ -127,7 +126,6 @@
             font-weight: 500;
         }
         
-        /* Content Areas */
         .tab-content {
             display: none;
             animation: fadeIn 0.3s ease;
@@ -142,7 +140,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Glass Panels */
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
@@ -162,7 +159,6 @@
             box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
         }
         
-        /* Buttons */
         .btn-primary {
             background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
             transition: all 0.2s ease;
@@ -192,7 +188,6 @@
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         }
         
-        /* Map Containers */
         .map-container {
             height: 280px;
             border-radius: 16px;
@@ -217,7 +212,6 @@
             }
         }
         
-        /* Point Cards */
         .point-card {
             transition: all 0.2s ease;
             border-left: 3px solid transparent;
@@ -232,7 +226,6 @@
             background: rgba(16, 185, 129, 0.1);
         }
         
-        /* Category Badges */
         .category-badge {
             font-size: 0.7rem;
             padding: 0.2rem 0.6rem;
@@ -245,7 +238,6 @@
         .cat-infra { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
         .cat-other { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
         
-        /* GPS Status */
         .gps-status {
             position: fixed;
             top: 12px;
@@ -281,12 +273,17 @@
             animation: pulse 2s infinite;
         }
         
+        .gps-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
         
-        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -298,7 +295,6 @@
             border-radius: 2px;
         }
         
-        /* Accuracy Monitor */
         .accuracy-live {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(14, 165, 233, 0.1) 100%);
             border: 1px solid rgba(16, 185, 129, 0.3);
@@ -317,7 +313,6 @@
             animation: pulse-fast 1.5s infinite;
         }
         
-        /* Order Badge for Area Selection */
         .order-badge {
             background: #10b981;
             color: white;
@@ -332,24 +327,20 @@
             flex-shrink: 0;
         }
         
-        /* Export Panel */
         .export-panel {
             background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
             border: 1px solid rgba(245, 158, 11, 0.3);
         }
         
-        /* Area Result */
         .area-result {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
             border: 2px solid rgba(16, 185, 129, 0.5);
         }
         
-        /* Selection Counter */
         .selection-counter {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
         
-        /* Institutional Header */
         .institutional-header {
             background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
             border-bottom: 2px solid #3b82f6;
@@ -359,36 +350,12 @@
             color: #60a5fa;
         }
         
-        /* Safe areas for notched devices */
         @supports (padding-top: env(safe-area-inset-top)) {
             .safe-top {
                 padding-top: env(safe-area-inset-top);
             }
         }
         
-        /* Floating Action Button style */
-        .fab {
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px rgba(14, 165, 233, 0.4);
-            z-index: 100;
-            transition: all 0.3s ease;
-        }
-        
-        .fab:active {
-            transform: scale(0.9);
-        }
-        
-        /* Card Styles */
         .stat-card {
             background: rgba(15, 23, 42, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -397,7 +364,6 @@
             text-align: center;
         }
         
-        /* Section Headers */
         .section-header {
             font-size: 0.875rem;
             font-weight: 600;
@@ -410,51 +376,36 @@
             gap: 8px;
         }
         
-        /* Quick Actions Grid */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-        
-        @media (min-width: 640px) {
-            .quick-actions {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-        
-        .quick-action-btn {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .permission-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             border-radius: 12px;
             padding: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .permission-fix-btn {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 8px;
+            cursor: pointer;
             transition: all 0.2s ease;
         }
         
-        .quick-action-btn:active {
-            transform: scale(0.96);
-            background: rgba(30, 41, 59, 0.8);
+        .permission-fix-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
         }
         
-        /* Professor Card */
         .professor-card {
             background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(15, 23, 42, 0.3) 100%);
             border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 16px;
             padding: 20px;
-        }
-        
-        /* Hide scrollbar for horizontal scroll */
-        .hide-scroll::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scroll {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
         }
     </style>
 </head>
@@ -494,6 +445,22 @@
                     GeoCollector
                 </h1>
                 <p class="text-slate-400 text-xs mt-1">Toque para capturar coordenadas</p>
+            </div>
+
+            <!-- Permission Error Message -->
+            <div id="permissionError" class="permission-error hidden">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-exclamation-triangle text-red-400 mt-1"></i>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-red-400 mb-1">Permissão de Localização Negada</h4>
+                        <p class="text-xs text-slate-300 mb-2" id="permissionErrorText">
+                            O acesso à localização foi negado. Para usar o GPS, permita o acesso à localização nas configurações do navegador.
+                        </p>
+                        <button onclick="requestLocationPermission()" class="permission-fix-btn">
+                            <i class="fas fa-redo mr-2"></i>Tentar Novamente
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Live GPS Monitor -->
@@ -982,13 +949,13 @@
             <button onclick="switchTab('area')" class="nav-item" id="nav-area">
                 <i class="fas fa-draw-polygon nav-icon"></i>
                 <span class="nav-label">Área</span>
-                <span id="areaBadge" class="hidden absolute -top-1 -right-1 bg-accent text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+                <span id="areaBadge" class="hidden absolute -top-1 right-2 bg-accent text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
             </button>
             
             <button onclick="switchTab('pontos')" class="nav-item" id="nav-pontos">
                 <i class="fas fa-list-ul nav-icon"></i>
                 <span class="nav-label">Pontos</span>
-                <span id="pointsBadge" class="hidden absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+                <span id="pointsBadge" class="hidden absolute -top-1 right-2 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
             </button>
             
             <button onclick="switchTab('config')" class="nav-item" id="nav-config">
@@ -1060,6 +1027,7 @@
         let map = null;
         let mapArea = null;
         let markers = [];
+        let polygonLayer = null;
         let watchId = null;
         let isTracking = false;
         let gpsWatchId = null;
@@ -1067,6 +1035,7 @@
         let coordSystem = 'geographic';
         let utmZone = 22;
         let lastCalculatedArea = null;
+        let permissionState = 'prompt'; // 'granted', 'denied', 'prompt'
 
         // UTM Projections
         const utmProjections = {
@@ -1089,22 +1058,155 @@
             updateCoordSystemUI();
         });
 
+        // Check and request permission properly
+        async function checkGPSPermission() {
+            if (!navigator.geolocation) {
+                showStatus('error', 'Não suportado');
+                showToast('Geolocalização não suportada neste dispositivo', 'error');
+                return;
+            }
+
+            // Try to use Permissions API if available
+            if (navigator.permissions && navigator.permissions.query) {
+                try {
+                    const result = await navigator.permissions.query({ name: 'geolocation' });
+                    permissionState = result.state;
+                    
+                    if (result.state === 'granted') {
+                        showStatus('active', 'GPS Ativo');
+                        hidePermissionError();
+                    } else if (result.state === 'denied') {
+                        showStatus('error', 'Permissão Negada');
+                        showPermissionError();
+                    } else {
+                        showStatus('inactive', 'Aguardando Permissão');
+                    }
+
+                    // Listen for permission changes
+                    result.addEventListener('change', () => {
+                        permissionState = result.state;
+                        if (result.state === 'granted') {
+                            showStatus('active', 'GPS Ativo');
+                            hidePermissionError();
+                        } else if (result.state === 'denied') {
+                            showStatus('error', 'Permissão Negada');
+                            showPermissionError();
+                        }
+                    });
+                } catch (e) {
+                    // Fallback for browsers that don't support querying geolocation permission
+                    console.log('Permissions API not fully supported');
+                }
+            }
+        }
+
+        function showPermissionError() {
+            const errorDiv = document.getElementById('permissionError');
+            const errorText = document.getElementById('permissionErrorText');
+            
+            if (errorDiv) {
+                errorDiv.classList.remove('hidden');
+                
+                // Customize message based on platform
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                const isAndroid = /Android/.test(navigator.userAgent);
+                
+                if (isIOS) {
+                    errorText.innerHTML = `
+                        O acesso à localização foi negado.<br><br>
+                        <strong>Para iOS:</strong> Ajustes > Privacidade > Serviços de Localização > Navegador > "Durante o Uso do App"
+                    `;
+                } else if (isAndroid) {
+                    errorText.innerHTML = `
+                        O acesso à localização foi negado.<br><br>
+                        <strong>Para Android:</strong> Configurações > Aplicativos > Navegador > Permissões > Localização > "Permitir"
+                    `;
+                } else {
+                    errorText.innerHTML = `
+                        O acesso à localização foi negado.<br><br>
+                        Clique no ícone de cadeado 🔒 ao lado da barra de endereço e permita acesso à localização.
+                    `;
+                }
+            }
+        }
+
+        function hidePermissionError() {
+            const errorDiv = document.getElementById('permissionError');
+            if (errorDiv) {
+                errorDiv.classList.add('hidden');
+            }
+        }
+
+        function requestLocationPermission() {
+            // Reset permission by trying to get position again
+            hidePermissionError();
+            showStatus('searching', 'Solicitando...');
+            
+            // This will trigger the browser permission prompt
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Success - permission granted
+                    permissionState = 'granted';
+                    showStatus('active', 'GPS Ativo');
+                    hidePermissionError();
+                    showToast('Permissão concedida! GPS ativo.');
+                    
+                    // If we were trying to start monitoring, do it now
+                    if (document.getElementById('accuracyMonitor').classList.contains('hidden') === false) {
+                        startGPSMonitoring();
+                    }
+                },
+                (error) => {
+                    handleGeolocationError(error, true);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function handleGeolocationError(error, isFromPermissionRequest = false) {
+            let errorMessage = 'Erro desconhecido';
+            let isPermissionError = false;
+            
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = 'Permissão negada pelo usuário';
+                    permissionState = 'denied';
+                    isPermissionError = true;
+                    showStatus('error', 'Permissão Negada');
+                    showPermissionError();
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = 'Localização indisponível';
+                    showStatus('error', 'Indisponível');
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = 'Tempo esgotado';
+                    showStatus('error', 'Timeout');
+                    break;
+                default:
+                    errorMessage = error.message || 'Erro desconhecido';
+                    showStatus('error', 'Erro');
+            }
+            
+            if (isPermissionError || isFromPermissionRequest) {
+                showToast(errorMessage, 'error');
+            }
+            
+            console.error('Geolocation error:', error.code, error.message);
+        }
+
         // Tab Switching
         function switchTab(tabName) {
-            // Update nav buttons
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`nav-${tabName}`).classList.add('active');
             
-            // Update content
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
             
-            // Initialize maps if needed
             if (tabName === 'area' && !mapArea) {
                 setTimeout(initAreaMap, 100);
             }
             
-            // Refresh maps
             setTimeout(() => {
                 if (map) map.invalidateSize();
                 if (mapArea) mapArea.invalidateSize();
@@ -1144,6 +1246,13 @@
                 return;
             }
 
+            // Check if permission was previously denied
+            if (permissionState === 'denied') {
+                showPermissionError();
+                showToast('Permissão de localização necessária', 'error');
+                return;
+            }
+
             isMonitoring = true;
             document.getElementById('startMonitoringBtn').classList.add('hidden');
             document.getElementById('accuracyMonitor').classList.remove('hidden');
@@ -1152,10 +1261,13 @@
             gpsWatchId = navigator.geolocation.watchPosition(
                 (position) => updateLiveDisplay(position),
                 (error) => {
-                    document.getElementById('accuracyTip').textContent = 'Erro: ' + error.message;
-                    document.getElementById('accuracyTip').classList.add('text-red-400');
+                    handleGeolocationError(error);
+                    // Don't stop monitoring on error, just show the error
+                    if (error.code === error.PERMISSION_DENIED) {
+                        stopGPSMonitoring();
+                    }
                 },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
@@ -1167,7 +1279,10 @@
             }
             document.getElementById('startMonitoringBtn').classList.remove('hidden');
             document.getElementById('accuracyMonitor').classList.add('hidden');
-            showStatus('active', 'GPS Ativo');
+            
+            if (permissionState !== 'denied') {
+                showStatus('active', 'GPS Ativo');
+            }
         }
 
         function updateLiveDisplay(position) {
@@ -1292,27 +1407,22 @@
             
             status.className = 'gps-status';
             if (type === 'active') status.classList.add('gps-active');
-            else if (type === 'error') status.classList.add('gps-inactive');
+            else if (type === 'error') status.classList.add('gps-error');
             else if (type === 'searching') status.classList.add('gps-searching');
+            else status.classList.add('gps-inactive');
             
             textEl.textContent = text;
         }
 
-        function checkGPSPermission() {
-            if (!navigator.geolocation) {
-                showStatus('error', 'Não suportado');
+        // Capture Location
+        function captureLocation() {
+            // Check permission first
+            if (permissionState === 'denied') {
+                showPermissionError();
+                showToast('Permissão de localização necessária', 'error');
                 return;
             }
             
-            navigator.geolocation.getCurrentPosition(
-                () => showStatus('active', 'GPS Ativo'),
-                () => showStatus('error', 'Permissão Negada'),
-                { enableHighAccuracy: true }
-            );
-        }
-
-        // Capture Location
-        function captureLocation() {
             showStatus('searching', 'Obtendo...');
             
             const btn = document.getElementById('btnCapture');
@@ -1322,6 +1432,10 @@
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    // Success - permission is granted
+                    permissionState = 'granted';
+                    hidePermissionError();
+                    
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     const utmCoords = toUTM(lat, lng, utmZone);
@@ -1363,10 +1477,9 @@
                     showToast(msg);
                 },
                 (error) => {
-                    showStatus('error', 'Erro');
+                    handleGeolocationError(error);
                     btn.disabled = false;
                     btn.innerHTML = originalContent;
-                    showToast('Erro: ' + error.message, 'error');
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
@@ -1382,6 +1495,12 @@
         }
 
         function startTracking() {
+            if (permissionState === 'denied') {
+                showPermissionError();
+                showToast('Permissão de localização necessária', 'error');
+                return;
+            }
+
             const btn = document.getElementById('btnTrack');
             btn.innerHTML = '<i class="fas fa-stop text-red-400"></i><span>Parar Rastreamento</span>';
             btn.classList.remove('border-slate-600', 'text-slate-400');
@@ -1391,6 +1510,9 @@
 
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
+                    permissionState = 'granted';
+                    hidePermissionError();
+                    
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     const utmCoords = toUTM(lat, lng, utmZone);
@@ -1423,7 +1545,9 @@
                     document.getElementById('currentAccuracy').textContent = 
                         Math.round(position.coords.accuracy) + 'm';
                 },
-                (error) => showToast('Erro: ' + error.message, 'error'),
+                (error) => {
+                    handleGeolocationError(error);
+                },
                 { enableHighAccuracy: true, maximumAge: 10000 }
             );
         }
@@ -1438,7 +1562,10 @@
             btn.innerHTML = '<i class="fas fa-play"></i><span>Iniciar Rastreamento Contínuo</span>';
             btn.classList.add('border-slate-600', 'text-slate-400');
             btn.classList.remove('border-red-500', 'text-red-400', 'bg-red-500/10');
-            showStatus('active', 'GPS Ativo');
+            
+            if (permissionState !== 'denied') {
+                showStatus('active', 'GPS Ativo');
+            }
         }
 
         // Storage
@@ -1622,7 +1749,6 @@
                 return;
             }
             
-            // Render filtered (simplified version)
             container.innerHTML = filtered.map((point) => {
                 const coords = formatCoords(point);
                 const date = new Date(point.timestamp);
