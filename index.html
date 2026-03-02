@@ -2,11 +2,17 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0f172a">
+    <meta name="color-scheme" content="dark">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>GeoCollector UFT - Coleta e Área GPS</title>
+    <meta name="apple-mobile-web-app-title" content="GeoCollector">
+    
+    <title>GeoCollector UFT</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,35 +26,23 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Proj4js for coordinate conversion -->
+    <!-- Proj4js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         primary: '#0ea5e9',
                         secondary: '#6366f1',
                         accent: '#10b981',
                         uft: '#1e3a8a',
-                        uftLight: '#3b82f6',
                         dark: '#0f172a',
                         surface: '#1e293b',
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'bounce-slight': 'bounce-slight 0.3s ease-in-out',
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        'bounce-slight': {
-                            '0%, 100%': { transform: 'scale(1)' },
-                            '50%': { transform: 'scale(0.95)' },
-                        }
+                        tabInactive: '#64748b',
+                        tabActive: '#0ea5e9'
                     }
                 }
             }
@@ -56,832 +50,737 @@
     </script>
     
     <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            user-select: none;
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .glass-input {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #0f172a;
             color: white;
-        }
-        
-        .glass-input:focus {
-            border-color: #0ea5e9;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:active {
-            transform: scale(0.95);
-        }
-        
-        .btn-accent {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-accent:active {
-            transform: scale(0.95);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-secondary:active {
-            transform: scale(0.95);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        }
-        
-        .map-container {
-            height: 300px;
-            border-radius: 1rem;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .map-large {
-            height: 400px;
-        }
-        
-        .point-card {
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-        }
-        
-        .point-card:hover {
-            transform: translateX(5px);
-            border-left-color: #0ea5e9;
-        }
-        
-        .point-card.selected {
-            border-left-color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-        }
-        
-        .category-badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-weight: 600;
-        }
-        
-        .cat-monument { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .cat-nature { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .cat-infra { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
-        .cat-other { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
-        
-        .gps-status {
             position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 50;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
+            width: 100%;
+            height: 100%;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        /* Container principal do app */
+        #app-container {
+            height: 100vh;
+            height: 100dvh;
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
+            flex-direction: column;
+            overflow: hidden;
         }
         
-        .gps-active {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-        
-        .gps-inactive {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-        
-        .gps-searching {
-            background: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(0);
-            animation: ripple 0.6s ease-out;
-        }
-        
-        @keyframes ripple {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
-        
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-        }
-        
-        .slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-        
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .institutional-header {
+        /* Header fixo */
+        .app-header {
             background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
-            border-bottom: 2px solid #3b82f6;
-        }
-
-        .uft-accent {
-            color: #60a5fa;
-        }
-
-        .coord-system-selector {
-            background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(15, 23, 42, 0.3) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
-        .coord-display {
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            letter-spacing: -0.5px;
-        }
-
-        .utm-zone-badge {
-            background: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-            font-size: 0.7rem;
-            padding: 0.125rem 0.5rem;
-            border-radius: 9999px;
-            font-weight: 600;
-        }
-
-        .accuracy-live {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(14, 165, 233, 0.1) 100%);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .accuracy-poor { border-color: rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); }
-        .accuracy-medium { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.1); }
-        .accuracy-good { border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.1); }
-        .accuracy-excellent { border-color: rgba(14, 165, 233, 0.5); background: rgba(14, 165, 233, 0.1); }
-
-        .live-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            animation: pulse-fast 1.5s infinite;
-        }
-
-        .tab-btn {
-            position: relative;
-            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 12px 16px;
+            padding-top: max(12px, env(safe-area-inset-top));
+            flex-shrink: 0;
+            z-index: 100;
         }
         
-        .tab-btn.active {
+        /* Área de conteúdo scrollável */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+        }
+        
+        /* Navegação inferior estilo iOS/Android */
+        .tab-bar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+            color: #64748b;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-radius: 12px;
+        }
+        
+        .tab-item:active {
+            transform: scale(0.92);
+        }
+        
+        .tab-item.active {
             color: #0ea5e9;
         }
         
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #0ea5e9, #6366f1);
-        }
-
-        .tab-content {
-            display: none;
+        .tab-icon {
+            font-size: 24px;
+            transition: transform 0.2s ease;
         }
         
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
+        .tab-item.active .tab-icon {
+            transform: translateY(-2px);
         }
-
+        
+        .tab-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Indicador de aba ativa (pill) */
+        .tab-indicator {
+            position: absolute;
+            bottom: 0;
+            height: 3px;
+            background: #0ea5e9;
+            border-radius: 3px 3px 0 0;
+            transition: all 0.3s ease;
+        }
+        
+        /* Telas/Abas */
+        .screen {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 24px;
+        }
+        
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        .area-result {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
-            border: 2px solid rgba(16, 185, 129, 0.5);
-        }
-
-        .polygon-point {
-            background: rgba(16, 185, 129, 0.2);
-            border: 2px solid #10b981;
-            color: #10b981;
-        }
-
-        .selection-counter {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-
-        .order-badge {
-            background: #10b981;
-            color: white;
-            width: 24px;
-            height: 24px;
+        
+        /* Componentes específicos */
+        .capture-button {
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
-            font-weight: bold;
+            box-shadow: 0 8px 32px rgba(14, 165, 233, 0.4);
+            margin: 24px auto;
+            position: relative;
+            transition: transform 0.2s ease;
         }
-
-        .export-panel {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
-            border: 1px solid rgba(245, 158, 11, 0.3);
+        
+        .capture-button:active {
+            transform: scale(0.95);
+        }
+        
+        .capture-button::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid rgba(14, 165, 233, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.5; }
+        }
+        
+        .capture-button i {
+            font-size: 32px;
+            color: white;
+        }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 12px 8px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0ea5e9;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .map-container-native {
+            height: calc(100vh - 200px);
+            border-radius: 16px;
+            overflow: hidden;
+            background: #f1f5f9;
+        }
+        
+        .list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .list-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .list-content {
+            flex: 1;
+        }
+        
+        .list-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .list-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin: 24px 0 12px 0;
+            padding-left: 4px;
+        }
+        
+        .about-hero {
+            text-align: center;
+            padding: 32px 16px;
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(15, 23, 42, 0) 100%);
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .about-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 36px;
+            box-shadow: 0 8px 32px rgba(14, 165, 233, 0.3);
+        }
+        
+        .about-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .about-subtitle {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(14, 165, 233, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0ea5e9;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .gps-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        
+        .gps-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .gps-inactive { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .gps-searching { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulseDot 2s infinite;
+        }
+        
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        
+        /* Modo standalone (app instalado) */
+        @media (display-mode: standalone) {
+            .app-header {
+                padding-top: env(safe-area-inset-top);
+            }
+            .tab-bar {
+                padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            }
         }
     </style>
 </head>
-<body class="text-white antialiased">
-
-    <!-- GPS Status Indicator -->
-    <div id="gpsStatus" class="gps-status gps-inactive">
-        <i class="fas fa-satellite-dish"></i>
-        <span id="gpsText">GPS Inativo</span>
-    </div>
-
-    <div class="container mx-auto px-4 py-6 max-w-md md:max-w-3xl lg:max-w-5xl">
-        
-        <!-- Institutional Header -->
-        <div class="institutional-header rounded-t-2xl p-4 mb-0 -mx-4 px-6 border-b border-blue-800/50">
+<body>
+    <div id="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                        <i class="fas fa-university text-white text-lg"></i>
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                        <i class="fas fa-map-marker-alt text-white"></i>
                     </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs text-blue-200 font-medium tracking-wider uppercase">Universidade Federal do Tocantins</span>
-                        <span class="text-sm font-bold text-white leading-tight">Campus Gurupi</span>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight">GeoCollector</h1>
+                        <p class="text-xs text-blue-200">UFT Campus Gurupi</p>
                     </div>
                 </div>
-                <div class="hidden sm:block text-right">
-                    <div class="text-xs text-blue-300">Curso de Agronomia</div>
-                    <div class="text-xs font-semibold uft-accent">Sensoriamento Remoto e SIG</div>
+                <div id="gpsStatusHeader" class="gps-status-pill gps-inactive">
+                    <span class="pulse-dot bg-current"></span>
+                    <span id="gpsText">GPS</span>
                 </div>
             </div>
-            <div class="sm:hidden mt-2 pt-2 border-t border-blue-800/30 flex justify-between text-xs">
-                <span class="text-blue-200">Agronomia</span>
-                <span class="uft-accent font-medium">Sensoriamento Remoto e SIG</span>
-            </div>
-        </div>
+        </header>
 
-        <!-- Main App Content -->
-        <div class="glass-panel rounded-b-2xl rounded-t-none p-6 mb-6 shadow-xl border-t-0">
+        <!-- CONTEÚDO -->
+        <main class="content-area">
             
-            <!-- App Header -->
-            <header class="mb-6 text-center pt-2">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary mb-4 shadow-lg shadow-primary/30">
-                    <i class="fas fa-map-marker-alt text-2xl text-white"></i>
-                </div>
-                <h1 class="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                    GeoCollector
-                </h1>
-                <p class="text-slate-400 text-sm">Coleta de pontos e cálculo de áreas</p>
-                <div class="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/30 border border-blue-700/30">
-                    <i class="fas fa-graduation-cap text-blue-400 text-xs"></i>
-                    <span class="text-xs text-blue-200">Projeto Acadêmico UFT</span>
-                </div>
-            </header>
-
-            <!-- Tab Navigation -->
-            <div class="flex border-b border-slate-700 mb-6">
-                <button onclick="switchTab('collect')" id="tab-collect" class="tab-btn active flex-1 py-3 text-sm font-medium text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-2">
-                    <i class="fas fa-crosshairs"></i>
-                    <span>Coleta</span>
-                </button>
-                <button onclick="switchTab('area')" id="tab-area" class="tab-btn flex-1 py-3 text-sm font-medium text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-2">
-                    <i class="fas fa-draw-polygon"></i>
-                    <span>Cálculo de Área</span>
-                    <span id="areaBadge" class="hidden ml-1 bg-accent text-white text-xs px-2 py-0.5 rounded-full">0</span>
-                </button>
-            </div>
-
-            <!-- TAB 1: COLETA -->
-            <div id="content-collect" class="tab-content active">
-                
-                <!-- Live GPS Monitor -->
-                <div id="accuracyMonitor" class="accuracy-live rounded-xl p-4 mb-6 hidden">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <div class="live-indicator">
-                                <div class="live-dot"></div>
-                                <span class="text-sm font-semibold text-green-400">GPS em Tempo Real</span>
-                            </div>
-                        </div>
-                        <button onclick="stopGPSMonitoring()" class="text-xs text-slate-400 hover:text-white transition-colors">
-                            <i class="fas fa-pause mr-1"></i> Pausar
-                        </button>
+            <!-- ABA 1: CAPTURAR -->
+            <section id="tab-capture" class="screen active">
+                <!-- Status do GPS -->
+                <div class="glass-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm font-medium text-slate-300">Status do Sistema</span>
+                        <span id="coordSystemBadge" class="badge">UTM 22S</span>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-3 mb-3">
-                        <div class="bg-slate-900/50 rounded-lg p-3 text-center">
-                            <div class="text-xs text-slate-400 mb-1">Precisão</div>
-                            <div id="liveAccuracy" class="text-2xl font-bold text-white font-mono">--</div>
-                            <div class="text-xs text-slate-500">metros</div>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div id="countPoints" class="stat-value">0</div>
+                            <div class="stat-label">Pontos</div>
                         </div>
-                        <div class="bg-slate-900/50 rounded-lg p-3 text-center">
-                            <div class="text-xs text-slate-400 mb-1">Satélites</div>
-                            <div id="liveSatellites" class="text-2xl font-bold text-white font-mono">--</div>
-                            <div class="text-xs text-slate-500">visíveis</div>
+                        <div class="stat-item">
+                            <div id="currentAccuracy" class="stat-value">--</div>
+                            <div class="stat-label">Precisão (m)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="lastUpdate" class="stat-value">--:--</div>
+                            <div class="stat-label">Último</div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="text-slate-400">Latitude:</span>
+                <!-- Botão Principal de Captura -->
+                <div class="text-center py-8">
+                    <p class="text-slate-400 text-sm mb-6">Toque para capturar coordenadas GPS</p>
+                    
+                    <div class="capture-button" onclick="captureLocation()">
+                        <i class="fas fa-crosshairs"></i>
+                    </div>
+                    
+                    <p id="captureHint" class="text-xs text-slate-500 mt-4 max-w-xs mx-auto">
+                        Aguarde o GPS estabilizar para melhor precisão
+                    </p>
+                </div>
+
+                <!-- Coordenadas em Tempo Real -->
+                <div class="glass-card">
+                    <h3 class="section-title">Coordenadas Atuais</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                            <span class="text-slate-400 text-sm">Latitude</span>
                             <span id="liveLat" class="font-mono text-primary">--</span>
                         </div>
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="text-slate-400">Longitude:</span>
+                        <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                            <span class="text-slate-400 text-sm">Longitude</span>
                             <span id="liveLng" class="font-mono text-primary">--</span>
                         </div>
-                        <div id="liveUtmContainer" class="hidden pt-2 border-t border-slate-700">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-slate-400">UTM X:</span>
-                                <span id="liveUtmX" class="font-mono text-secondary">--</span>
-                            </div>
-                            <div class="flex justify-between items-center text-xs mt-1">
-                                <span class="text-slate-400">UTM Y:</span>
-                                <span id="liveUtmY" class="font-mono text-secondary">--</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-3 flex items-center gap-2 text-xs">
-                        <i class="fas fa-info-circle text-slate-500"></i>
-                        <span class="text-slate-400" id="accuracyTip">Iniciando...</span>
-                    </div>
-                </div>
-
-                <div id="startMonitoringBtn" class="mb-6">
-                    <button onclick="startGPSMonitoring()" 
-                        class="w-full py-3 rounded-xl border-2 border-dashed border-slate-600 hover:border-primary hover:bg-primary/10 transition-all text-slate-400 hover:text-primary font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-satellite text-lg"></i>
-                        <span>Iniciar Monitoramento GPS</span>
-                    </button>
-                </div>
-
-                <!-- Coord System -->
-                <div class="coord-system-selector rounded-xl p-4 mb-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <label class="text-sm font-semibold text-blue-200 flex items-center gap-2">
-                            <i class="fas fa-globe-americas text-blue-400"></i>
-                            Sistema de Coordenadas
-                        </label>
-                        <span id="currentZone" class="utm-zone-badge hidden">Zona 22S</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="setCoordSystem('geographic')" id="btnGeo" 
-                            class="py-3 px-4 rounded-xl font-medium transition-all duration-300 flex flex-col items-center gap-1 border-2 border-primary bg-primary/20 text-white">
-                            <i class="fas fa-globe text-lg"></i>
-                            <span class="text-sm">Geográficas</span>
-                            <span class="text-xs opacity-70">Lat / Long</span>
-                        </button>
-                        
-                        <button onclick="setCoordSystem('utm')" id="btnUtm" 
-                            class="py-3 px-4 rounded-xl font-medium transition-all duration-300 flex flex-col items-center gap-1 border-2 border-transparent bg-slate-700/50 text-slate-300 hover:bg-slate-700">
-                            <i class="fas fa-map text-lg"></i>
-                            <span class="text-sm">UTM</span>
-                            <span class="text-xs opacity-70">X / Y (m)</span>
-                        </button>
-                    </div>
-
-                    <div id="utmZoneSelector" class="mt-3 hidden">
-                        <label class="text-xs text-slate-400 mb-1 block">Zona UTM</label>
-                        <select id="utmZone" onchange="updateUTMZone()" class="glass-input w-full px-3 py-2 rounded-lg text-sm">
-                            <option value="22">Zona 22S (Tocantins/Pará)</option>
-                            <option value="23">Zona 23S (Maranhão/Piauí)</option>
-                            <option value="21">Zona 21S (Goiás/MT)</option>
-                            <option value="24">Zona 24S (Bahia)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="bg-slate-800/50 rounded-2xl p-6 mb-6 border border-slate-700">
-                    <button id="btnCapture" onclick="captureLocation()" 
-                        class="btn-primary w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-3 active:scale-95 transition-transform mb-4">
-                        <i class="fas fa-crosshairs text-2xl"></i>
-                        <span>Capturar Localização</span>
-                    </button>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="startTracking()" id="btnTrack" 
-                            class="glass-input py-3 rounded-xl font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
-                            <i class="fas fa-play text-green-400"></i>
-                            <span>Rastrear</span>
-                        </button>
-                        <button onclick="clearAllPoints()" 
-                            class="glass-input py-3 rounded-xl font-medium hover:bg-red-900/30 transition-colors text-red-400 flex items-center justify-center gap-2">
-                            <i class="fas fa-trash-alt"></i>
-                            <span>Limpar Tudo</span>
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-700">
-                        <div class="text-center">
-                            <div id="countPoints" class="text-2xl font-bold text-primary">0</div>
-                            <div class="text-xs text-slate-400">Pontos</div>
-                        </div>
-                        <div class="text-center">
-                            <div id="currentAccuracy" class="text-2xl font-bold text-slate-200">--</div>
-                            <div class="text-xs text-slate-400">Precisão (m)</div>
-                        </div>
-                        <div class="text-center">
-                            <div id="lastUpdate" class="text-2xl font-bold text-slate-200">--:--</div>
-                            <div class="text-xs text-slate-400">Último</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Map -->
-                <div class="bg-white rounded-2xl p-4 mb-6 border border-slate-300 shadow-lg">
-                    <h3 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                        <i class="fas fa-map text-primary"></i>
-                        Mapa
-                    </h3>
-                    <div id="map" class="map-container map-light w-full"></div>
-                </div>
-
-                <!-- Points List -->
-                <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold flex items-center gap-2">
-                            <i class="fas fa-list text-primary"></i>
-                            Pontos Coletados
-                        </h3>
-                        <div class="flex gap-2">
-                            <button onclick="exportData('geojson')" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg transition-colors">
-                                <i class="fas fa-download mr-1"></i> GeoJSON
-                            </button>
-                            <button onclick="exportData('csv')" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg transition-colors">
-                                <i class="fas fa-file-csv mr-1"></i> CSV
-                            </button>
-                        </div>
-                    </div>
-                    <div id="pointsList" class="space-y-3 max-h-96 overflow-y-auto">
-                        <div class="text-center text-slate-500 py-8">
-                            <i class="fas fa-map-marked-alt text-4xl mb-3 opacity-50"></i>
-                            <p>Nenhum ponto coletado</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 2: CÁLCULO DE ÁREA -->
-            <div id="content-area" class="tab-content">
-                
-                <!-- Area Calculation Header -->
-                <div class="bg-gradient-to-r from-accent/20 to-primary/20 rounded-xl p-4 mb-6 border border-accent/30">
-                    <div class="flex items-center gap-3 mb-2">
-                        <div class="w-12 h-12 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/30">
-                            <i class="fas fa-draw-polygon text-white text-xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-xl font-bold text-white">Cálculo de Área</h2>
-                            <p class="text-sm text-slate-300">Polígono com coordenadas UTM</p>
-                        </div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Selecione 3 ou mais pontos para formar um polígono fechado. O cálculo utiliza as coordenadas UTM (X,Y) para máxima precisão.
-                    </p>
-                </div>
-
-                <!-- Selection Controls -->
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm text-slate-400">Pontos selecionados:</span>
-                        <span id="selectionCount" class="selection-counter text-white text-sm px-3 py-1 rounded-full font-bold">0</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="clearSelection()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg transition-colors text-slate-300">
-                            <i class="fas fa-undo mr-1"></i> Limpar
-                        </button>
-                        <button onclick="autoSelectPolygon()" class="text-xs bg-primary/20 hover:bg-primary/30 border border-primary/50 text-primary px-3 py-2 rounded-lg transition-colors">
-                            <i class="fas fa-magic mr-1"></i> Auto
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Polygon Preview Map -->
-                <div class="bg-white rounded-2xl p-4 mb-6 border border-slate-300 shadow-lg">
-                    <h3 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                        <i class="fas fa-eye text-accent"></i>
-                        Visualização do Polígono
-                    </h3>
-                    <div id="mapArea" class="map-container map-large map-light w-full"></div>
-                    <div class="flex justify-between items-center mt-2 text-xs text-slate-500">
-                        <span><i class="fas fa-layer-group mr-1"></i> OSM - Polígono em verde</span>
-                        <span id="polygonInfo">Nenhum polígono formado</span>
-                    </div>
-                </div>
-
-                <!-- Area Results -->
-                <div id="areaResults" class="hidden area-result rounded-xl p-6 mb-6">
-                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                        <i class="fas fa-calculator text-accent"></i>
-                        Resultado do Cálculo
-                    </h3>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div class="bg-slate-900/50 rounded-lg p-4 text-center">
-                            <div class="text-xs text-slate-400 mb-1">Área Total</div>
-                            <div id="areaM2" class="text-3xl font-bold text-white font-mono">--</div>
-                            <div class="text-xs text-slate-500">metros quadrados (m²)</div>
-                        </div>
-                        <div class="bg-slate-900/50 rounded-lg p-4 text-center border-2 border-accent/50">
-                            <div class="text-xs text-accent mb-1">Área em Hectares</div>
-                            <div id="areaHa" class="text-3xl font-bold text-accent font-mono">--</div>
-                            <div class="text-xs text-slate-500">hectares (ha)</div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
-                            <span class="text-slate-400">Perímetro:</span>
-                            <span id="perimeter" class="font-mono text-white">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
-                            <span class="text-slate-400">Número de vértices:</span>
-                            <span id="vertexCount" class="font-mono text-white">--</span>
-                        </div>
                         <div class="flex justify-between items-center py-2">
-                            <span class="text-slate-400">Zona UTM utilizada:</span>
-                            <span id="utmZoneUsed" class="font-mono text-white">--</span>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 p-3 bg-slate-900/30 rounded-lg">
-                        <p class="text-xs text-slate-400">
-                            <i class="fas fa-check-circle text-accent mr-1"></i>
-                            Cálculo realizado usando projeção UTM (coordenadas planas). Precisão métrica adequada para propriedades rurais e talhões.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Export Panel (shown after calculation) -->
-                <div id="exportPanel" class="hidden export-panel rounded-xl p-6 mb-6">
-                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                        <i class="fas fa-file-export text-secondary"></i>
-                        Exportar Polígono
-                    </h3>
-                    
-                    <p class="text-xs text-slate-400 mb-4">
-                        Exporte o polígono calculado para uso em sistemas GIS (QGIS, ArcGIS, Google Earth) ou planilhas.
-                    </p>
-
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <button onclick="exportPolygon('geojson')" class="btn-primary py-3 rounded-xl font-medium flex items-center justify-center gap-2 text-sm">
-                            <i class="fas fa-file-code"></i>
-                            <span>GeoJSON (Polygon)</span>
-                        </button>
-                        <button onclick="exportPolygon('kml')" class="btn-secondary py-3 rounded-xl font-medium flex items-center justify-center gap-2 text-sm text-white">
-                            <i class="fas fa-globe"></i>
-                            <span>KML (Google Earth)</span>
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="exportPolygon('csv')" class="glass-input py-3 rounded-xl font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 text-sm">
-                            <i class="fas fa-file-csv text-primary"></i>
-                            <span>CSV (Vértices)</span>
-                        </button>
-                        <button onclick="exportPolygon('report')" class="glass-input py-3 rounded-xl font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 text-sm">
-                            <i class="fas fa-file-alt text-accent"></i>
-                            <span>Relatório TXT</span>
-                        </button>
-                    </div>
-
-                    <div class="mt-4 p-3 bg-slate-900/30 rounded-lg border border-slate-700">
-                        <h4 class="text-xs font-semibold text-slate-300 mb-2">Informações do Polígono:</h4>
-                        <div id="polygonMetadata" class="text-xs text-slate-400 space-y-1 font-mono">
-                            <!-- Filled dynamically -->
+                            <span class="text-slate-400 text-sm">UTM (X, Y)</span>
+                            <span id="liveUtm" class="font-mono text-secondary">--</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Selection Hint -->
-                <div id="selectionHint" class="bg-slate-800/50 rounded-xl p-4 mb-4 border border-dashed border-slate-600 text-center">
-                    <i class="fas fa-hand-pointer text-3xl text-slate-500 mb-2"></i>
-                    <p class="text-sm text-slate-400">Selecione pontos na lista abaixo para formar um polígono</p>
-                    <p class="text-xs text-slate-500 mt-1">Mínimo 3 pontos • Ordem importa!</p>
+                <!-- Ações Secundárias -->
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="startTracking()" id="btnTrack" class="glass-card py-4 flex items-center justify-center gap-2 text-sm font-medium active:scale-95 transition-transform">
+                        <i class="fas fa-play text-green-400"></i>
+                        Rastrear
+                    </button>
+                    <button onclick="clearAllPoints()" class="glass-card py-4 flex items-center justify-center gap-2 text-sm font-medium text-red-400 active:scale-95 transition-transform">
+                        <i class="fas fa-trash-alt"></i>
+                        Limpar
+                    </button>
                 </div>
 
-                <!-- Points Selection List -->
-                <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-list-check text-accent"></i>
-                        Selecionar Pontos para Polígono
-                    </h3>
-                    <div id="areaPointsList" class="space-y-2 max-h-96 overflow-y-auto">
-                        <div class="text-center text-slate-500 py-8">
-                            <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
-                            <p>Nenhum ponto disponível</p>
-                            <p class="text-sm mt-1">Colete pontos na aba "Coleta" primeiro</p>
+                <!-- Lista Recente -->
+                <h3 class="section-title">Capturas Recentes</h3>
+                <div id="recentPointsList" class="space-y-2">
+                    <div class="text-center text-slate-500 py-8">
+                        <i class="fas fa-inbox text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Nenhum ponto capturado</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 2: MAPA -->
+            <section id="tab-map" class="screen">
+                <!-- Controles do Mapa -->
+                <div class="glass-card mb-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold">Visualização do Mapa</h3>
+                            <p id="mapPointCount" class="text-xs text-slate-400 mt-1">0 pontos no mapa</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="centerOnPoints()" class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center text-sm">
+                                <i class="fas fa-compress-arrows-alt"></i>
+                            </button>
+                            <button onclick="toggleMapLayer()" class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center text-sm">
+                                <i class="fas fa-layer-group"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Calculate Button -->
-                <button onclick="calculateArea()" id="btnCalculate" disabled
-                    class="w-full mt-6 btn-accent py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/30 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                    <i class="fas fa-calculator text-2xl"></i>
-                    <span>Calcular Área do Polígono</span>
-                </button>
+                <!-- Mapa -->
+                <div id="map" class="map-container-native mb-4"></div>
+
+                <!-- Lista de Pontos no Mapa -->
+                <h3 class="section-title">Pontos no Mapa</h3>
+                <div id="mapPointsList" class="space-y-2 pb-20">
+                    <div class="text-center text-slate-500 py-8">
+                        <i class="fas fa-map-marked-alt text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Capture pontos para visualizar no mapa</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 3: SOBRE -->
+            <section id="tab-about" class="screen">
+                <!-- Hero -->
+                <div class="about-hero">
+                    <div class="about-logo">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h2 class="about-title">GeoCollector UFT</h2>
+                    <p class="about-subtitle">v1.0.0 • Sensoriamento Remoto e SIG</p>
+                </div>
+
+                <!-- Instituição -->
+                <div class="glass-card text-center py-6">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-900/30 border border-blue-700/30 mb-4">
+                        <i class="fas fa-university text-blue-400"></i>
+                        <span class="text-sm text-blue-200 font-medium">UFT - Campus Gurupi</span>
+                    </div>
+                    <p class="text-sm text-slate-400">Curso de Agronomia</p>
+                    <p class="text-xs text-slate-500 mt-1">Disciplina de Sensoriamento Remoto e SIG</p>
+                </div>
+
+                <!-- Funcionalidades -->
+                <h3 class="section-title">Funcionalidades</h3>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-crosshairs"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-1">Coleta de Pontos GPS</h4>
+                        <p class="text-sm text-slate-400">Captura precisa de coordenadas geográficas com monitoramento em tempo real da precisão do sinal.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-map"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-1">Sistema UTM</h4>
+                        <p class="text-sm text-slate-400">Conversão automática para coordenadas UTM com suporte a múltiplas zonas (fusos).</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-draw-polygon"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-1">Cálculo de Área</h4>
+                        <p class="text-sm text-slate-400">Forme polígonos com pontos coletados e calcule área em m² e hectares.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-file-export"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-1">Exportação</h4>
+                        <p class="text-sm text-slate-400">Exporte dados em GeoJSON, KML, CSV ou relatório técnico em TXT.</p>
+                    </div>
+                </div>
+
+                <!-- Estatísticas do App -->
+                <h3 class="section-title">Estatísticas</h3>
+                <div class="glass-card">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center py-3">
+                            <div id="totalPointsAllTime" class="text-2xl font-bold text-primary">0</div>
+                            <div class="text-xs text-slate-400">Pontos coletados</div>
+                        </div>
+                        <div class="text-center py-3 border-l border-slate-700">
+                            <div id="totalAreasCalculated" class="text-2xl font-bold text-accent">0</div>
+                            <div class="text-xs text-slate-400">Áreas calculadas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ações -->
+                <h3 class="section-title">Ações</h3>
+                <div class="space-y-2">
+                    <button onclick="exportAllData()" class="list-item w-full text-left active:opacity-80">
+                        <div class="list-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="list-content">
+                            <div class="list-title">Exportar Todos os Dados</div>
+                            <div class="list-subtitle">GeoJSON, CSV ou KML</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-500"></i>
+                    </button>
+
+                    <button onclick="showHelp()" class="list-item w-full text-left active:opacity-80">
+                        <div class="list-icon bg-purple-500/20 text-purple-400">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <div class="list-content">
+                            <div class="list-title">Ajuda e Tutorial</div>
+                            <div class="list-subtitle">Como usar o aplicativo</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-500"></i>
+                    </button>
+
+                    <button onclick="showSettings()" class="list-item w-full text-left active:opacity-80">
+                        <div class="list-icon bg-slate-700">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="list-content">
+                            <div class="list-title">Configurações</div>
+                            <div class="list-subtitle">Sistema de coordenadas e zona UTM</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-500"></i>
+                    </button>
+                </div>
+
+                <!-- Footer -->
+                <div class="text-center py-8 text-slate-500 text-xs">
+                    <p>© 2026 Universidade Federal do Tocantins</p>
+                    <p class="mt-1">Desenvolvido para fins acadêmicos</p>
+                    <p class="mt-2 text-slate-600">v1.0.0-build.{{ github.run_number }}</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- NAVEGAÇÃO INFERIOR -->
+        <nav class="tab-bar">
+            <div class="tab-item active" onclick="switchTab('capture')" data-tab="capture">
+                <i class="fas fa-crosshairs tab-icon"></i>
+                <span class="tab-label">Capturar</span>
             </div>
-
-        </div>
-
-        <!-- Footer -->
-        <footer class="glass-panel rounded-2xl p-6 text-center border-t-4 border-blue-600">
-            <div class="flex flex-col items-center gap-3">
-                <div class="flex items-center gap-2 text-blue-400">
-                    <i class="fas fa-university text-xl"></i>
-                    <span class="font-bold text-lg">UFT - Universidade Federal do Tocantins</span>
-                </div>
-                <div class="w-full h-px bg-gradient-to-r from-transparent via-blue-600/50 to-transparent my-2"></div>
-                <div class="space-y-1">
-                    <p class="text-sm font-semibold text-white">Curso de Agronomia</p>
-                    <p class="text-sm text-slate-300">Campus Universitário de Gurupi</p>
-                    <p class="text-sm font-medium uft-accent mt-2 bg-blue-900/20 px-4 py-2 rounded-lg inline-block">
-                        Disciplina: Sensoriamento Remoto e SIG
-                    </p>
-                </div>
-                <div class="mt-4 pt-4 border-t border-slate-700/50 w-full">
-                    <p class="text-xs text-slate-500">Aplicação desenvolvida para fins acadêmicos</p>
-                    <p class="text-xs text-slate-600 mt-1">© 2026 UFT - Todos os direitos reservados</p>
-                </div>
+            <div class="tab-item" onclick="switchTab('map')" data-tab="map">
+                <i class="fas fa-map tab-icon"></i>
+                <span class="tab-label">Mapa</span>
             </div>
-        </footer>
+            <div class="tab-item" onclick="switchTab('about')" data-tab="about">
+                <i class="fas fa-info-circle tab-icon"></i>
+                <span class="tab-label">Sobre</span>
+            </div>
+        </nav>
     </div>
 
-    <!-- Edit Modal -->
-    <div id="editModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-md rounded-2xl p-6 slide-up border-t-4 border-blue-500">
-            <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-700">
-                <div class="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center">
-                    <i class="fas fa-edit text-blue-400"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold text-white">Editar Ponto</h3>
-                    <p class="text-xs text-slate-400">UFT - Sensoriamento Remoto</p>
-                </div>
-            </div>
+    <!-- Modais -->
+    <!-- Modal de Configurações -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-4">
+        <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 animate-slide-up">
+            <h3 class="text-xl font-bold mb-4">Configurações</h3>
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">Nome do Local</label>
-                    <input type="text" id="editName" class="glass-input w-full px-4 py-3 rounded-xl" placeholder="Ex: Praça Central">
+                    <label class="block text-sm text-slate-400 mb-2">Sistema de Coordenadas</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setCoordSystem('geographic')" id="btnGeo" class="py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium">
+                            Lat/Long
+                        </button>
+                        <button onclick="setCoordSystem('utm')" id="btnUtm" class="py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium">
+                            UTM
+                        </button>
+                    </div>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">Categoria</label>
-                    <select id="editCategory" class="glass-input w-full px-4 py-3 rounded-xl">
-                        <option value="monument">Monumento/Histórico</option>
-                        <option value="nature">Natureza/Parque</option>
-                        <option value="infra">Infraestrutura</option>
-                        <option value="other">Outro</option>
+                    <label class="block text-sm text-slate-400 mb-2">Zona UTM</label>
+                    <select id="utmZoneSelect" onchange="updateUTMZone()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white">
+                        <option value="22">Zona 22S (Tocantins)</option>
+                        <option value="23">Zona 23S (Maranhão)</option>
+                        <option value="21">Zona 21S (Goiás)</option>
+                        <option value="24">Zona 24S (Bahia)</option>
                     </select>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">Descrição</label>
-                    <textarea id="editDesc" rows="3" class="glass-input w-full px-4 py-3 rounded-xl resize-none" placeholder="Observações adicionais..."></textarea>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3 pt-2">
-                    <button onclick="closeModal()" class="glass-input py-3 rounded-xl font-medium hover:bg-slate-700 transition-colors">
-                        Cancelar
-                    </button>
-                    <button onclick="saveEdit()" class="btn-primary py-3 rounded-xl font-medium">
-                        Salvar Alterações
-                    </button>
-                </div>
             </div>
+            
+            <button onclick="closeSettings()" class="w-full mt-6 py-3 bg-primary rounded-xl font-medium">
+                Fechar
+            </button>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script>
-        // State management
+        // Estado global
         let points = JSON.parse(localStorage.getItem('geoPoints')) || [];
-        let selectedPoints = [];
-        let currentEditId = null;
-        let map = null;
-        let mapArea = null;
-        let markers = [];
-        let polygonLayer = null;
-        let watchId = null;
-        let isTracking = false;
-        let gpsWatchId = null;
-        let isMonitoring = false;
-        let coordSystem = 'geographic';
+        let currentTab = 'capture';
+        let coordSystem = 'utm';
         let utmZone = 22;
-        
-        // Store last calculated area for export
-        let lastCalculatedArea = null;
+        let map = null;
+        let markers = [];
 
         // UTM Projections
         const utmProjections = {
-            21: '+proj=utm +zone=21 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
-            22: '+proj=utm +zone=22 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
-            23: '+proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
-            24: '+proj=utm +zone=24 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
+            21: '+proj=utm +zone=21 +south +ellps=GRS80 +units=m +no_defs',
+            22: '+proj=utm +zone=22 +south +ellps=GRS80 +units=m +no_defs',
+            23: '+proj=utm +zone=23 +south +ellps=GRS80 +units=m +no_defs',
+            24: '+proj=utm +zone=24 +south +ellps=GRS80 +units=m +no_defs'
         };
         const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
 
-        // Initialize
+        // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
             initMap();
-            renderPoints();
-            updateStats();
-            checkGPSPermission();
-            updateCoordSystemUI();
-            renderAreaPointsList();
+            updateUI();
+            startGPSMonitoring();
+            
+            // Detectar modo standalone
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                document.body.classList.add('standalone');
+            }
         });
 
-        // Tab Switching
+        // Navegação entre abas
         function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            // Atualizar tabs visuais
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.tab === tabName) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Esconder todas as telas
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Mostrar tela selecionada
             document.getElementById(`tab-${tabName}`).classList.add('active');
+            currentTab = tabName;
             
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(`content-${tabName}`).classList.add('active');
-            
-            if (tabName === 'area' && !mapArea) {
-                setTimeout(initAreaMap, 100);
-            }
-            
-            if (tabName === 'area' && mapArea) {
+            // Ações específicas por tab
+            if (tabName === 'map' && map) {
                 setTimeout(() => {
-                    mapArea.invalidateSize();
-                    updateAreaMap();
+                    map.invalidateSize();
+                    updateMap();
                 }, 100);
             }
         }
 
-        // Initialize Maps
+        // Inicializar mapa
         function initMap() {
-            map = L.map('map', { zoomControl: false, attributionControl: false })
-                .setView([-11.7286, -49.0686], 13);
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView([-11.7286, -49.0686], 13);
             
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 19
@@ -890,1129 +789,310 @@
             L.control.zoom({ position: 'bottomright' }).addTo(map);
         }
 
-        function initAreaMap() {
-            mapArea = L.map('mapArea', { zoomControl: false, attributionControl: false })
-                .setView([-11.7286, -49.0686], 13);
-            
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19
-            }).addTo(mapArea);
-            
-            L.control.zoom({ position: 'bottomright' }).addTo(mapArea);
-            updateAreaMap();
+        // Atualizar toda a UI
+        function updateUI() {
+            updateStats();
+            renderRecentPoints();
+            renderMapPoints();
+            updateCoordBadge();
         }
 
-        // GPS Monitoring
-        function startGPSMonitoring() {
-            if (!navigator.geolocation) {
-                showToast('Geolocalização não suportada', 'error');
-                return;
-            }
-
-            isMonitoring = true;
-            document.getElementById('startMonitoringBtn').classList.add('hidden');
-            document.getElementById('accuracyMonitor').classList.remove('hidden');
-            showStatus('searching', 'Monitorando...');
-
-            gpsWatchId = navigator.geolocation.watchPosition(
-                (position) => updateLiveDisplay(position),
-                (error) => {
-                    document.getElementById('accuracyTip').textContent = 'Erro: ' + error.message;
-                    document.getElementById('accuracyTip').classList.add('text-red-400');
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
+        // Atualizar badge de coordenadas
+        function updateCoordBadge() {
+            const badge = document.getElementById('coordSystemBadge');
+            badge.textContent = coordSystem === 'utm' ? `UTM ${utmZone}S` : 'Lat/Long';
         }
 
-        function stopGPSMonitoring() {
-            isMonitoring = false;
-            if (gpsWatchId) {
-                navigator.geolocation.clearWatch(gpsWatchId);
-                gpsWatchId = null;
-            }
-            document.getElementById('startMonitoringBtn').classList.remove('hidden');
-            document.getElementById('accuracyMonitor').classList.add('hidden');
-            showStatus('active', 'GPS Ativo');
-        }
-
-        function updateLiveDisplay(position) {
-            const accuracy = position.coords.accuracy;
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            
-            const accuracyEl = document.getElementById('liveAccuracy');
-            const monitor = document.getElementById('accuracyMonitor');
-            
-            accuracyEl.textContent = accuracy.toFixed(1);
-            
-            monitor.classList.remove('accuracy-poor', 'accuracy-medium', 'accuracy-good', 'accuracy-excellent');
-            
-            if (accuracy > 15) {
-                monitor.classList.add('accuracy-poor');
-                document.getElementById('accuracyTip').innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Precisão ruim (>15m)';
-                document.getElementById('accuracyTip').className = 'text-red-400';
-            } else if (accuracy > 5) {
-                monitor.classList.add('accuracy-medium');
-                document.getElementById('accuracyTip').innerHTML = '<i class="fas fa-check mr-1"></i> Precisão moderada';
-                document.getElementById('accuracyTip').className = 'text-yellow-400';
-            } else if (accuracy > 2) {
-                monitor.classList.add('accuracy-good');
-                document.getElementById('accuracyTip').innerHTML = '<i class="fas fa-check-circle mr-1"></i> Boa precisão';
-                document.getElementById('accuracyTip').className = 'text-green-400';
-            } else {
-                monitor.classList.add('accuracy-excellent');
-                document.getElementById('accuracyTip').innerHTML = '<i class="fas fa-star mr-1"></i> Excelente precisão!';
-                document.getElementById('accuracyTip').className = 'text-blue-400';
-            }
-
-            document.getElementById('liveLat').textContent = lat.toFixed(6) + '°';
-            document.getElementById('liveLng').textContent = lng.toFixed(6) + '°';
-            
-            if (coordSystem === 'utm') {
-                const utm = toUTM(lat, lng, utmZone);
-                if (utm) {
-                    document.getElementById('liveUtmContainer').classList.remove('hidden');
-                    document.getElementById('liveUtmX').textContent = Math.round(utm.x) + ' m';
-                    document.getElementById('liveUtmY').textContent = Math.round(utm.y) + ' m';
-                }
-            } else {
-                document.getElementById('liveUtmContainer').classList.add('hidden');
-            }
-
-            let sats = position.coords.satellites || null;
-            if (!sats && accuracy < 3) sats = '12+';
-            else if (!sats && accuracy < 6) sats = '8-11';
-            else if (!sats && accuracy < 10) sats = '5-7';
-            else if (!sats) sats = '<5';
-            
-            document.getElementById('liveSatellites').textContent = sats;
-
-            if (map && !isTracking) {
-                map.setView([lat, lng], map.getZoom());
-            }
-        }
-
-        // Coordinate Conversions
-        function toUTM(lat, lon, zone) {
-            try {
-                const projString = utmProjections[zone];
-                if (!projString) return null;
-                const result = proj4(wgs84, projString, [lon, lat]);
-                return { x: result[0], y: result[1], zone: zone, hemisphere: 'S' };
-            } catch (e) {
-                console.error('UTM conversion error:', e);
-                return null;
-            }
-        }
-
-        // Coordinate System UI
-        function setCoordSystem(system) {
-            coordSystem = system;
-            updateCoordSystemUI();
-            
-            const zoneSelector = document.getElementById('utmZoneSelector');
-            const zoneBadge = document.getElementById('currentZone');
-            
-            if (system === 'utm') {
-                zoneSelector.classList.remove('hidden');
-                zoneBadge.classList.remove('hidden');
-                zoneBadge.textContent = `Zona ${utmZone}S`;
-            } else {
-                zoneSelector.classList.add('hidden');
-                zoneBadge.classList.add('hidden');
-            }
-            
-            renderPoints();
-            renderAreaPointsList();
-            showToast(`Sistema: ${system === 'geographic' ? 'Geográficas' : 'UTM Zona ' + utmZone + 'S'}`);
-        }
-
-        function updateUTMZone() {
-            utmZone = parseInt(document.getElementById('utmZone').value);
-            document.getElementById('currentZone').textContent = `Zona ${utmZone}S`;
-            renderPoints();
-            renderAreaPointsList();
-            showToast(`Zona UTM: ${utmZone}S`);
-        }
-
-        function updateCoordSystemUI() {
-            const btnGeo = document.getElementById('btnGeo');
-            const btnUtm = document.getElementById('btnUtm');
-            
-            if (coordSystem === 'geographic') {
-                btnGeo.classList.add('border-primary', 'bg-primary/20', 'text-white');
-                btnGeo.classList.remove('border-transparent', 'bg-slate-700/50', 'text-slate-300');
-                btnUtm.classList.remove('border-primary', 'bg-primary/20', 'text-white');
-                btnUtm.classList.add('border-transparent', 'bg-slate-700/50', 'text-slate-300');
-            } else {
-                btnUtm.classList.add('border-primary', 'bg-primary/20', 'text-white');
-                btnUtm.classList.remove('border-transparent', 'bg-slate-700/50', 'text-slate-300');
-                btnGeo.classList.remove('border-primary', 'bg-primary/20', 'text-white');
-                btnGeo.classList.add('border-transparent', 'bg-slate-700/50', 'text-slate-300');
-            }
-        }
-
-        // GPS Status
-        function showStatus(type, text) {
-            const status = document.getElementById('gpsStatus');
-            const textEl = document.getElementById('gpsText');
-            
-            status.className = 'gps-status';
-            if (type === 'active') status.classList.add('gps-active');
-            else if (type === 'error') status.classList.add('gps-inactive');
-            else if (type === 'searching') status.classList.add('gps-searching');
-            
-            textEl.textContent = text;
-        }
-
-        function checkGPSPermission() {
-            if (!navigator.geolocation) {
-                showStatus('error', 'Não suportado');
-                return;
-            }
-            
-            navigator.geolocation.getCurrentPosition(
-                () => showStatus('active', 'GPS Ativo'),
-                () => showStatus('error', 'Permissão Negada'),
-                { enableHighAccuracy: true }
-            );
-        }
-
-        // Capture Location
-        function captureLocation() {
-            showStatus('searching', 'Obtendo...');
-            
-            const btn = document.getElementById('btnCapture');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-2xl"></i><span>Obtendo...</span>';
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const utmCoords = toUTM(lat, lng, utmZone);
-                    
-                    const point = {
-                        id: Date.now(),
-                        lat: lat,
-                        lng: lng,
-                        utmX: utmCoords ? utmCoords.x : null,
-                        utmY: utmCoords ? utmCoords.y : null,
-                        utmZone: utmZone,
-                        accuracy: position.coords.accuracy,
-                        altitude: position.coords.altitude,
-                        timestamp: new Date().toISOString(),
-                        name: `Ponto ${points.length + 1}`,
-                        category: 'other',
-                        description: '',
-                        coordSystem: coordSystem
-                    };
-
-                    points.unshift(point);
-                    savePoints();
-                    renderPoints();
-                    renderAreaPointsList();
-                    updateStats();
-                    updateMap();
-                    
-                    showStatus('active', 'GPS Ativo');
-                    createRipple(btn);
-                    
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-crosshairs text-2xl"></i><span>Capturar Localização</span>';
-                    
-                    const acc = position.coords.accuracy;
-                    let msg = 'Localização capturada';
-                    if (acc < 5) msg += ' (Excelente!)';
-                    else if (acc < 10) msg += ' (Boa)';
-                    showToast(msg);
-                },
-                (error) => {
-                    showStatus('error', 'Erro');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-crosshairs text-2xl"></i><span>Capturar Localização</span>';
-                    showToast('Erro: ' + error.message, 'error');
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-
-        // Tracking
-        function startTracking() {
-            if (isTracking) {
-                stopTracking();
-                return;
-            }
-
-            const btn = document.getElementById('btnTrack');
-            btn.innerHTML = '<i class="fas fa-stop text-red-400"></i><span>Parar</span>';
-            btn.classList.add('bg-red-900/30');
-            isTracking = true;
-            showStatus('searching', 'Rastreando...');
-
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const utmCoords = toUTM(lat, lng, utmZone);
-                    
-                    const point = {
-                        id: Date.now(),
-                        lat: lat,
-                        lng: lng,
-                        utmX: utmCoords ? utmCoords.x : null,
-                        utmY: utmCoords ? utmCoords.y : null,
-                        utmZone: utmZone,
-                        accuracy: position.coords.accuracy,
-                        altitude: position.coords.altitude,
-                        timestamp: new Date().toISOString(),
-                        name: `Track ${points.length + 1}`,
-                        category: 'other',
-                        description: 'Auto',
-                        coordSystem: coordSystem
-                    };
-
-                    points.unshift(point);
-                    savePoints();
-                    renderPoints();
-                    renderAreaPointsList();
-                    updateStats();
-                    updateMap();
-                    
-                    document.getElementById('currentAccuracy').textContent = 
-                        Math.round(position.coords.accuracy) + 'm';
-                },
-                (error) => showToast('Erro: ' + error.message, 'error'),
-                { enableHighAccuracy: true, maximumAge: 10000 }
-            );
-        }
-
-        function stopTracking() {
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            isTracking = false;
-            const btn = document.getElementById('btnTrack');
-            btn.innerHTML = '<i class="fas fa-play text-green-400"></i><span>Rastrear</span>';
-            btn.classList.remove('bg-red-900/30');
-            showStatus('active', 'GPS Ativo');
-        }
-
-        // Storage
-        function savePoints() {
-            localStorage.setItem('geoPoints', JSON.stringify(points));
-        }
-
-        // Format Coordinates
-        function formatCoords(point) {
-            if (coordSystem === 'geographic') {
-                return {
-                    main: `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`,
-                    sub: point.utmX ? `UTM: ${Math.round(point.utmX)}, ${Math.round(point.utmY)}` : null,
-                    icon: 'fa-globe',
-                    label: 'Lat/Long'
-                };
-            } else {
-                if (point.utmX && point.utmY) {
-                    return {
-                        main: `${Math.round(point.utmX)}E, ${Math.round(point.utmY)}N`,
-                        sub: `Lat: ${point.lat.toFixed(6)}, Long: ${point.lng.toFixed(6)}`,
-                        icon: 'fa-map',
-                        label: `Zona ${point.utmZone || utmZone}S`
-                    };
-                } else {
-                    const utm = toUTM(point.lat, point.lng, utmZone);
-                    return {
-                        main: utm ? `${Math.round(utm.x)}E, ${Math.round(utm.y)}N` : 'Erro',
-                        sub: `Lat: ${point.lat.toFixed(6)}, Long: ${point.lng.toFixed(6)}`,
-                        icon: 'fa-map',
-                        label: `Zona ${utmZone}S`
-                    };
-                }
-            }
-        }
-
-        // Render Points List (Collect Tab)
-        function renderPoints() {
-            const container = document.getElementById('pointsList');
-            
-            if (points.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-slate-500 py-8">
-                        <i class="fas fa-map-marked-alt text-4xl mb-3 opacity-50"></i>
-                        <p>Nenhum ponto coletado</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = points.map((point, index) => {
-                const date = new Date(point.timestamp);
-                const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                const coords = formatCoords(point);
-                
-                const catColors = {
-                    monument: 'cat-monument',
-                    nature: 'cat-nature',
-                    infra: 'cat-infra',
-                    other: 'cat-other'
-                };
-                
-                const catNames = {
-                    monument: 'Monumento',
-                    nature: 'Natureza',
-                    infra: 'Infraestrutura',
-                    other: 'Outro'
-                };
-
-                let accColor = 'text-slate-400';
-                if (point.accuracy < 3) accColor = 'text-blue-400';
-                else if (point.accuracy < 6) accColor = 'text-green-400';
-                else if (point.accuracy < 15) accColor = 'text-yellow-400';
-                else accColor = 'text-red-400';
-
-                return `
-                    <div class="point-card glass-panel p-4 rounded-xl flex justify-between items-start group">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <h4 class="font-semibold text-white truncate">${point.name}</h4>
-                                <span class="category-badge ${catColors[point.category]}">${catNames[point.category]}</span>
-                            </div>
-                            <div class="text-xs text-slate-400 space-y-1">
-                                <div class="flex items-center gap-2">
-                                    <i class="fas ${coords.icon} text-primary"></i>
-                                    <span class="coord-display text-primary font-mono">${coords.main}</span>
-                                </div>
-                                ${coords.sub ? `
-                                <div class="flex items-center gap-2 text-slate-500">
-                                    <i class="fas fa-exchange-alt text-xs"></i>
-                                    <span class="coord-display">${coords.sub}</span>
-                                </div>
-                                ` : ''}
-                                <div class="flex items-center gap-4 mt-1">
-                                    <span class="${accColor}"><i class="fas fa-bullseye"></i> ±${Math.round(point.accuracy)}m</span>
-                                    <span><i class="fas fa-clock text-slate-500"></i> ${timeStr}</span>
-                                    <span class="utm-zone-badge">${coords.label}</span>
-                                </div>
-                                ${point.description ? `<p class="text-slate-300 mt-1 italic">${point.description}</p>` : ''}
-                            </div>
-                        </div>
-                        <div class="flex flex-col gap-2 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="editPoint(${point.id})" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-primary flex items-center justify-center transition-colors">
-                                <i class="fas fa-pen text-xs"></i>
-                            </button>
-                            <button onclick="deletePoint(${point.id})" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-red-500 flex items-center justify-center transition-colors">
-                                <i class="fas fa-trash text-xs"></i>
-                            </button>
-                            <button onclick="centerMap(${point.lat}, ${point.lng})" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-secondary flex items-center justify-center transition-colors">
-                                <i class="fas fa-crosshairs text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Update Main Map
-        function updateMap() {
-            markers.forEach(m => map.removeLayer(m));
-            markers = [];
-
-            if (points.length === 0) return;
-
-            const group = new L.featureGroup();
-            
-            points.forEach((point, index) => {
-                const color = index === 0 ? '#0ea5e9' : '#6366f1';
-                const marker = L.circleMarker([point.lat, point.lng], {
-                    radius: 8,
-                    fillColor: color,
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                }).addTo(map);
-                
-                const coords = formatCoords(point);
-                marker.bindPopup(`
-                    <div style="color: #1e293b;">
-                        <strong>${point.name}</strong><br>
-                        <small>${coords.main}</small><br>
-                        <small style="color: ${point.accuracy < 5 ? '#10b981' : '#f59e0b'};">
-                            Precisão: ${Math.round(point.accuracy)}m
-                        </small>
-                    </div>
-                `);
-                
-                markers.push(marker);
-                group.addLayer(marker);
-            });
-
-            if (points.length > 0) {
-                map.fitBounds(group.getBounds().pad(0.1));
-            }
-        }
-
-        function centerMap(lat, lng) {
-            map.setView([lat, lng], 16);
-        }
-
-        // AREA CALCULATION FUNCTIONS
-
-        // Render Points List for Area Tab
-        function renderAreaPointsList() {
-            const container = document.getElementById('areaPointsList');
-            const areaBadge = document.getElementById('areaBadge');
-            
-            if (points.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-slate-500 py-8">
-                        <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
-                        <p>Nenhum ponto disponível</p>
-                        <p class="text-sm mt-1">Colete pontos na aba "Coleta" primeiro</p>
-                    </div>
-                `;
-                areaBadge.classList.add('hidden');
-                return;
-            }
-
-            areaBadge.classList.remove('hidden');
-            areaBadge.textContent = points.length;
-
-            container.innerHTML = points.map((point, index) => {
-                const isSelected = selectedPoints.find(p => p.id === point.id);
-                const order = isSelected ? selectedPoints.findIndex(p => p.id === point.id) + 1 : null;
-                const coords = formatCoords(point);
-                
-                return `
-                    <div onclick="togglePointSelection(${point.id})" 
-                         class="point-card cursor-pointer glass-panel p-3 rounded-xl flex items-center gap-3 ${isSelected ? 'selected' : ''}">
-                        
-                        ${isSelected ? `
-                            <div class="order-badge flex-shrink-0">${order}</div>
-                        ` : `
-                            <div class="w-6 h-6 rounded-full border-2 border-slate-500 flex-shrink-0 flex items-center justify-center">
-                                ${isSelected ? '<i class="fas fa-check text-xs text-accent"></i>' : ''}
-                            </div>
-                        `}
-                        
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                                <h4 class="font-semibold text-white text-sm truncate">${point.name}</h4>
-                                ${isSelected ? '<i class="fas fa-check-circle text-accent text-xs"></i>' : ''}
-                            </div>
-                            <div class="text-xs text-slate-400 font-mono mt-1">
-                                ${coords.main}
-                            </div>
-                            <div class="text-xs text-slate-500">
-                                Precisão: ±${Math.round(point.accuracy)}m • ${coords.label}
-                            </div>
-                        </div>
-                        
-                        ${point.utmX && point.utmY ? `
-                            <div class="text-xs text-right text-slate-500 font-mono hidden sm:block">
-                                <div>X: ${Math.round(point.utmX)}</div>
-                                <div>Y: ${Math.round(point.utmY)}</div>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Toggle Point Selection
-        function togglePointSelection(pointId) {
-            const existingIndex = selectedPoints.findIndex(p => p.id === pointId);
-            
-            if (existingIndex >= 0) {
-                selectedPoints.splice(existingIndex, 1);
-            } else {
-                const point = points.find(p => p.id === pointId);
-                if (point) {
-                    selectedPoints.push(point);
-                }
-            }
-            
-            updateSelectionUI();
-            renderAreaPointsList();
-            updateAreaMap();
-        }
-
-        // Clear Selection
-        function clearSelection() {
-            selectedPoints = [];
-            updateSelectionUI();
-            renderAreaPointsList();
-            updateAreaMap();
-            document.getElementById('areaResults').classList.add('hidden');
-            document.getElementById('exportPanel').classList.add('hidden');
-            document.getElementById('selectionHint').classList.remove('hidden');
-            lastCalculatedArea = null;
-        }
-
-        // Auto Select Polygon
-        function autoSelectPolygon() {
-            if (points.length < 3) {
-                showToast('Colete pelo menos 3 pontos primeiro', 'error');
-                return;
-            }
-            
-            const validPoints = points.filter(p => p.utmX && p.utmY);
-            
-            if (validPoints.length < 3) {
-                showToast('Pontos precisam ter coordenadas UTM. Mude o sistema para UTM e colete novamente.', 'error');
-                return;
-            }
-            
-            selectedPoints = [...validPoints];
-            updateSelectionUI();
-            renderAreaPointsList();
-            updateAreaMap();
-            showToast(`${selectedPoints.length} pontos selecionados automaticamente`);
-        }
-
-        // Update Selection UI
-        function updateSelectionUI() {
-            const count = selectedPoints.length;
-            document.getElementById('selectionCount').textContent = count;
-            
-            const btnCalculate = document.getElementById('btnCalculate');
-            if (count >= 3) {
-                btnCalculate.disabled = false;
-                document.getElementById('selectionHint').classList.add('hidden');
-            } else {
-                btnCalculate.disabled = true;
-                if (count === 0) {
-                    document.getElementById('selectionHint').classList.remove('hidden');
-                }
-            }
-            
-            const info = document.getElementById('polygonInfo');
-            if (count === 0) {
-                info.textContent = 'Nenhum polígono formado';
-            } else if (count === 1) {
-                info.textContent = '1 ponto selecionado (mínimo: 3)';
-            } else if (count === 2) {
-                info.textContent = '2 pontos selecionados (mínimo: 3)';
-            } else {
-                info.textContent = `${count} vértices selecionados - pronto para calcular`;
-            }
-        }
-
-        // Update Area Map
-        function updateAreaMap() {
-            if (!mapArea) return;
-            
-            mapArea.eachLayer((layer) => {
-                if (layer instanceof L.Marker || layer instanceof L.Polygon || layer instanceof L.Polyline) {
-                    mapArea.removeLayer(layer);
-                }
-            });
-            
-            if (selectedPoints.length === 0) return;
-            
-            const latlngs = [];
-            
-            selectedPoints.forEach((point, index) => {
-                const color = '#10b981';
-                const marker = L.circleMarker([point.lat, point.lng], {
-                    radius: 10,
-                    fillColor: color,
-                    color: '#fff',
-                    weight: 3,
-                    opacity: 1,
-                    fillOpacity: 0.9
-                }).addTo(mapArea);
-                
-                marker.bindPopup(`
-                    <div style="color: #1e293b;">
-                        <strong>${index + 1}. ${point.name}</strong><br>
-                        <small>Ordem: ${index + 1}</small>
-                    </div>
-                `);
-                
-                latlngs.push([point.lat, point.lng]);
-            });
-            
-            if (selectedPoints.length >= 3) {
-                const closedLatLngs = [...latlngs, latlngs[0]];
-                
-                const polygon = L.polygon(closedLatLngs, {
-                    color: '#10b981',
-                    weight: 3,
-                    opacity: 0.8,
-                    fillColor: '#10b981',
-                    fillOpacity: 0.2
-                }).addTo(mapArea);
-                
-                mapArea.fitBounds(polygon.getBounds().pad(0.1));
-            } else if (selectedPoints.length >= 2) {
-                L.polyline(latlngs, {
-                    color: '#10b981',
-                    weight: 3,
-                    opacity: 0.8,
-                    dashArray: '5, 10'
-                }).addTo(mapArea);
-                
-                mapArea.fitBounds(L.latLngBounds(latlngs).pad(0.2));
-            } else {
-                mapArea.setView(latlngs[0], 16);
-            }
-        }
-
-        // Calculate Area using Shoelace Formula
-        function calculateArea() {
-            if (selectedPoints.length < 3) {
-                showToast('Selecione pelo menos 3 pontos', 'error');
-                return;
-            }
-            
-            const validPoints = selectedPoints.filter(p => p.utmX && p.utmY);
-            
-            if (validPoints.length < 3) {
-                showToast('Pontos precisam de coordenadas UTM válidas', 'error');
-                return;
-            }
-            
-            const zones = [...new Set(validPoints.map(p => p.utmZone || utmZone))];
-            if (zones.length > 1) {
-                showToast('Todos os pontos devem estar na mesma zona UTM', 'error');
-                return;
-            }
-            
-            let area = 0;
-            let perimeter = 0;
-            const n = validPoints.length;
-            
-            for (let i = 0; i < n; i++) {
-                const current = validPoints[i];
-                const next = validPoints[(i + 1) % n];
-                
-                area += (current.utmX * next.utmY) - (next.utmX * current.utmY);
-                
-                const dx = next.utmX - current.utmX;
-                const dy = next.utmY - current.utmY;
-                perimeter += Math.sqrt(dx * dx + dy * dy);
-            }
-            
-            area = Math.abs(area) / 2;
-            const areaHa = area / 10000;
-            
-            // Store for export
-            lastCalculatedArea = {
-                area_m2: area,
-                area_ha: areaHa,
-                perimeter: perimeter,
-                vertices: n,
-                zone: zones[0],
-                points: validPoints,
-                timestamp: new Date().toISOString()
-            };
-            
-            document.getElementById('areaM2').textContent = area.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-            document.getElementById('areaHa').textContent = areaHa.toLocaleString('pt-BR', { maximumFractionDigits: 4 });
-            document.getElementById('perimeter').textContent = perimeter.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' m';
-            document.getElementById('vertexCount').textContent = n;
-            document.getElementById('utmZoneUsed').textContent = `Zona ${zones[0]}S (SIRGAS 2000)`;
-            
-            document.getElementById('areaResults').classList.remove('hidden');
-            document.getElementById('exportPanel').classList.remove('hidden');
-            
-            // Update metadata
-            document.getElementById('polygonMetadata').innerHTML = `
-                <div><span class="text-slate-500">Área:</span> ${areaHa.toFixed(4)} ha (${area.toFixed(2)} m²)</div>
-                <div><span class="text-slate-500">Perímetro:</span> ${perimeter.toFixed(2)} m</div>
-                <div><span class="text-slate-500">Vértices:</span> ${n}</div>
-                <div><span class="text-slate-500">Zona UTM:</span> ${zones[0]}S</div>
-                <div><span class="text-slate-500">Data:</span> ${new Date().toLocaleString('pt-BR')}</div>
-            `;
-            
-            document.getElementById('areaResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            
-            showToast(`Área calculada: ${areaHa.toFixed(4)} ha`);
-        }
-
-        // EXPORT POLYGON FUNCTION
-        function exportPolygon(format) {
-            if (!lastCalculatedArea) {
-                showToast('Calcule a área primeiro', 'error');
-                return;
-            }
-            
-            const timestamp = new Date().toISOString().split('T')[0];
-            const timeStr = new Date().toISOString().replace(/[:.]/g, '-');
-            let content, mimeType, filename, extension;
-            
-            const { area_m2, area_ha, perimeter, vertices, zone, points: polyPoints } = lastCalculatedArea;
-            
-            switch(format) {
-                case 'geojson':
-                    // GeoJSON Polygon
-                    const coordinates = polyPoints.map(p => [p.lng, p.lat]);
-                    coordinates.push(coordinates[0]); // Close the polygon
-                    
-                    const geojson = {
-                        type: 'FeatureCollection',
-                        features: [{
-                            type: 'Feature',
-                            properties: {
-                                name: `Poligono_Area_${timestamp}`,
-                                area_m2: area_m2,
-                                area_ha: area_ha,
-                                perimeter_m: perimeter,
-                                vertices: vertices,
-                                utm_zone: zone,
-                                datum: 'SIRGAS 2000',
-                                calculated_at: new Date().toISOString(),
-                                institution: 'UFT - Universidade Federal do Tocantins',
-                                course: 'Agronomia',
-                                discipline: 'Sensoriamento Remoto e SIG',
-                                campus: 'Gurupi'
-                            },
-                            geometry: {
-                                type: 'Polygon',
-                                coordinates: [coordinates]
-                            }
-                        }]
-                    };
-                    
-                    content = JSON.stringify(geojson, null, 2);
-                    mimeType = 'application/geo+json';
-                    extension = 'geojson';
-                    filename = `poligono_area_uft_gurupi_${timestamp}.${extension}`;
-                    break;
-                    
-                case 'kml':
-                    // KML for Google Earth
-                    const kmlCoordinates = polyPoints.map(p => `${p.lng},${p.lat},0`).join(' ');
-                    // Close the polygon
-                    const firstPoint = polyPoints[0];
-                    const closedKmlCoords = kmlCoordinates + ` ${firstPoint.lng},${firstPoint.lat},0`;
-                    
-                    content = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>Polígono de Área - UFT Gurupi</name>
-    <description>
-      Área: ${area_ha.toFixed(4)} ha
-      Perímetro: ${perimeter.toFixed(2)} m
-      Vértices: ${vertices}
-      Zona UTM: ${zone}S
-    </description>
-    <Style id="polygonStyle">
-      <PolyStyle>
-        <color>7f00ff00</color>
-        <fill>1</fill>
-        <outline>1</outline>
-      </PolyStyle>
-      <LineStyle>
-        <color>ff00ff00</color>
-        <width>3</width>
-      </LineStyle>
-    </Style>
-    <Placemark>
-      <name>Área Calculada</name>
-      <styleUrl>#polygonStyle</styleUrl>
-      <Polygon>
-        <extrude>1</extrude>
-        <altitudeMode>clampToGround</altitudeMode>
-        <outerBoundaryIs>
-          <LinearRing>
-            <coordinates>${closedKmlCoords}</coordinates>
-          </LinearRing>
-        </outerBoundaryIs>
-      </Polygon>
-    </Placemark>
-    ${polyPoints.map((p, i) => `
-    <Placemark>
-      <name>Vértice ${i + 1}: ${p.name}</name>
-      <description>
-        X: ${p.utmX.toFixed(2)} m
-        Y: ${p.utmY.toFixed(2)} m
-        Precisão: ±${p.accuracy}m
-      </description>
-      <Point>
-        <coordinates>${p.lng},${p.lat},0</coordinates>
-      </Point>
-    </Placemark>`).join('')}
-  </Document>
-</kml>`;
-                    mimeType = 'application/vnd.google-earth.kml+xml';
-                    extension = 'kml';
-                    filename = `poligono_area_uft_gurupi_${timestamp}.${extension}`;
-                    break;
-                    
-                case 'csv':
-                    // CSV with vertices
-                    const headers = ['Vertice', 'Nome', 'Latitude', 'Longitude', 'UTM_X', 'UTM_Y', 'Precisao_m', 'DataHora'];
-                    const rows = polyPoints.map((p, i) => [
-                        i + 1,
-                        `"${p.name}"`,
-                        p.lat,
-                        p.lng,
-                        p.utmX,
-                        p.utmY,
-                        p.accuracy,
-                        p.timestamp
-                    ]);
-                    
-                    // Add summary row
-                    rows.push(['', '', '', '', '', '', '', '']);
-                    rows.push(['RESUMO', '', '', '', '', '', '', '']);
-                    rows.push(['Area_m2', area_m2, '', '', '', '', '', '']);
-                    rows.push(['Area_ha', area_ha, '', '', '', '', '', '']);
-                    rows.push(['Perimetro_m', perimeter, '', '', '', '', '', '']);
-                    rows.push(['Zona_UTM', zone, '', '', '', '', '', '']);
-                    rows.push(['Data_Calculo', new Date().toISOString(), '', '', '', '', '', '']);
-                    
-                    content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-                    mimeType = 'text/csv';
-                    extension = 'csv';
-                    filename = `vertices_poligono_uft_gurupi_${timestamp}.${extension}`;
-                    break;
-                    
-                case 'report':
-                    // Text report
-                    content = `RELATÓRIO DE CÁLCULO DE ÁREA
-================================
-Instituição: UFT - Universidade Federal do Tocantins
-Curso: Agronomia
-Disciplina: Sensoriamento Remoto e SIG
-Campus: Gurupi
-Data: ${new Date().toLocaleString('pt-BR')}
-
-DADOS DO POLÍGONO
------------------
-Área: ${area_m2.toFixed(2)} m²
-Área: ${area_ha.toFixed(4)} ha
-Perímetro: ${perimeter.toFixed(2)} m
-Número de vértices: ${vertices}
-Zona UTM: ${zone}S
-Datum: SIRGAS 2000
-
-COORDENADAS DOS VÉRTICES
-------------------------
-${polyPoints.map((p, i) => `
-VÉRTICE ${i + 1}: ${p.name}
-  Latitude:  ${p.lat.toFixed(6)}°
-  Longitude: ${p.lng.toFixed(6)}°
-  UTM X:     ${p.utmX.toFixed(3)} m
-  UTM Y:     ${p.utmY.toFixed(3)} m
-  Precisão:  ±${p.accuracy} m
-  Data:      ${new Date(p.timestamp).toLocaleString('pt-BR')}
-`).join('\n')}
-
-METODOLOGIA
------------
-Cálculo realizado utilizando a fórmula do Shoelace (Gauss) 
-aplicada às coordenadas UTM (Sistema de Coordenadas Planas).
-Precisão métrica adequada para cadastro de propriedades rurais 
-e delimitação de talhões agrícolas.
-
-Responsável: _________________________
-Data: _________________________
-`;
-                    mimeType = 'text/plain';
-                    extension = 'txt';
-                    filename = `relatorio_area_uft_gurupi_${timestamp}.${extension}`;
-                    break;
-            }
-            
-            // Download file
-            const blob = new Blob([content], { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showToast(`Polígono exportado como ${format.toUpperCase()}!`);
-        }
-
-        // Edit, Delete, Clear functions
-        function editPoint(id) {
-            const point = points.find(p => p.id === id);
-            if (!point) return;
-            
-            currentEditId = id;
-            document.getElementById('editName').value = point.name;
-            document.getElementById('editCategory').value = point.category;
-            document.getElementById('editDesc').value = point.description || '';
-            
-            document.getElementById('editModal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('editModal').classList.add('hidden');
-            currentEditId = null;
-        }
-
-        function saveEdit() {
-            if (!currentEditId) return;
-            
-            const point = points.find(p => p.id === currentEditId);
-            if (point) {
-                point.name = document.getElementById('editName').value || point.name;
-                point.category = document.getElementById('editCategory').value;
-                point.description = document.getElementById('editDesc').value;
-                
-                savePoints();
-                renderPoints();
-                renderAreaPointsList();
-                showToast('Ponto atualizado!');
-            }
-            
-            closeModal();
-        }
-
-        function deletePoint(id) {
-            if (confirm('Tem certeza que deseja excluir este ponto?')) {
-                points = points.filter(p => p.id !== id);
-                selectedPoints = selectedPoints.filter(p => p.id !== id);
-                savePoints();
-                renderPoints();
-                renderAreaPointsList();
-                updateSelectionUI();
-                updateStats();
-                updateMap();
-                updateAreaMap();
-                showToast('Ponto removido');
-            }
-        }
-
-        function clearAllPoints() {
-            if (points.length === 0) return;
-            
-            if (confirm(`Excluir todos os ${points.length} pontos?`)) {
-                points = [];
-                selectedPoints = [];
-                savePoints();
-                renderPoints();
-                renderAreaPointsList();
-                updateSelectionUI();
-                updateStats();
-                updateMap();
-                updateAreaMap();
-                showToast('Todos os pontos removidos');
-            }
-        }
-
-        // Stats
+        // Estatísticas
         function updateStats() {
             document.getElementById('countPoints').textContent = points.length;
+            document.getElementById('mapPointCount').textContent = `${points.length} pontos no mapa`;
+            document.getElementById('totalPointsAllTime').textContent = points.length;
             
             if (points.length > 0) {
                 const last = points[0];
-                document.getElementById('currentAccuracy').textContent = Math.round(last.accuracy) + 'm';
+                document.getElementById('currentAccuracy').textContent = Math.round(last.accuracy);
                 
                 const date = new Date(last.timestamp);
                 document.getElementById('lastUpdate').textContent = 
                     date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            } else {
-                document.getElementById('currentAccuracy').textContent = '--';
-                document.getElementById('lastUpdate').textContent = '--:--';
             }
         }
 
-        // Export Points (not polygon)
-        function exportData(format) {
+        // Renderizar pontos recentes na aba Capturar
+        function renderRecentPoints() {
+            const container = document.getElementById('recentPointsList');
+            
             if (points.length === 0) {
-                showToast('Nenhum dado para exportar', 'error');
+                container.innerHTML = `
+                    <div class="text-center text-slate-500 py-8">
+                        <i class="fas fa-inbox text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Nenhum ponto capturado</p>
+                    </div>
+                `;
                 return;
             }
-
-            const timestamp = new Date().toISOString().split('T')[0];
-            let content, mimeType, filename;
-
-            if (format === 'geojson') {
-                const geojson = {
-                    type: 'FeatureCollection',
-                    features: points.map(p => ({
-                        type: 'Feature',
-                        properties: {
-                            name: p.name,
-                            category: p.category,
-                            description: p.description,
-                            accuracy: p.accuracy,
-                            timestamp: p.timestamp,
-                            institution: 'UFT',
-                            course: 'Agronomia',
-                            discipline: 'Sensoriamento Remoto e SIG',
-                            campus: 'Gurupi',
-                            utm_x: p.utmX,
-                            utm_y: p.utmY,
-                            utm_zone: p.utmZone
-                        },
-                        geometry: {
-                            type: 'Point',
-                            coordinates: [p.lng, p.lat, p.altitude || 0]
-                        }
-                    }))
-                };
-                content = JSON.stringify(geojson, null, 2);
-                mimeType = 'application/geo+json';
-                filename = `pontos-uft-gurupi-${timestamp}.geojson`;
-            } else {
-                const headers = ['ID', 'Nome', 'Latitude', 'Longitude', 'UTM_X', 'UTM_Y', 'UTM_Zona', 'Precisao_m', 'Categoria', 'Descricao', 'DataHora'];
-                const rows = points.map(p => [
-                    p.id, `"${p.name}"`, p.lat, p.lng, p.utmX || '', p.utmY || '', p.utmZone || '',
-                    p.accuracy, p.category, `"${p.description || ''}"`, p.timestamp
-                ]);
-                content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-                mimeType = 'text/csv';
-                filename = `pontos-uft-gurupi-${timestamp}.csv`;
-            }
-
-            const blob = new Blob([content], { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
             
-            showToast(`Arquivo ${format.toUpperCase()} baixado!`);
+            container.innerHTML = points.slice(0, 5).map((point, index) => {
+                const coords = formatCoords(point);
+                const time = new Date(point.timestamp).toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', minute: '2-digit' 
+                });
+                
+                return `
+                    <div class="glass-card flex items-center gap-3 py-3">
+                        <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                            <span class="text-primary font-bold text-sm">${index + 1}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-sm truncate">${point.name}</div>
+                            <div class="text-xs text-slate-400 font-mono">${coords.main}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">${time}</div>
+                            <div class="text-xs ${point.accuracy < 5 ? 'text-green-400' : 'text-yellow-400'}">
+                                ±${Math.round(point.accuracy)}m
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        // UI Effects
-        function createRipple(element) {
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-            const rect = element.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = rect.left + rect.width / 2 - size / 2 + 'px';
-            ripple.style.top = rect.top + rect.height / 2 - size / 2 + 'px';
-            document.body.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 600);
+        // Renderizar pontos na aba Mapa
+        function renderMapPoints() {
+            const container = document.getElementById('mapPointsList');
+            
+            if (points.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-slate-500 py-8">
+                        <i class="fas fa-map-marked-alt text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Capture pontos para visualizar</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = points.map((point, index) => {
+                const coords = formatCoords(point);
+                
+                return `
+                    <div class="list-item" onclick="centerMapOnPoint(${point.lat}, ${point.lng})">
+                        <div class="list-icon">
+                            <span class="font-bold text-sm">${index + 1}</span>
+                        </div>
+                        <div class="list-content">
+                            <div class="list-title">${point.name}</div>
+                            <div class="list-subtitle font-mono">${coords.main}</div>
+                        </div>
+                        <i class="fas fa-location-arrow text-slate-500"></i>
+                    </div>
+                `;
+            }).join('');
         }
 
+        // Formatar coordenadas
+        function formatCoords(point) {
+            if (coordSystem === 'geographic') {
+                return {
+                    main: `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`
+                };
+            } else {
+                return {
+                    main: point.utmX ? 
+                        `${Math.round(point.utmX)}E, ${Math.round(point.utmY)}N` : 
+                        'Sem UTM'
+                };
+            }
+        }
+
+        // Converter para UTM
+        function toUTM(lat, lng, zone) {
+            try {
+                const result = proj4(wgs84, utmProjections[zone], [lng, lat]);
+                return { x: result[0], y: result[1] };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Capturar localização
+        async function captureLocation() {
+            const btn = document.querySelector('.capture-button');
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = '', 150);
+            
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                });
+                
+                const { latitude: lat, longitude: lng, accuracy } = position.coords;
+                const utm = toUTM(lat, lng, utmZone);
+                
+                const point = {
+                    id: Date.now(),
+                    name: `Ponto ${points.length + 1}`,
+                    lat, lng, accuracy,
+                    utmX: utm?.x, utmY: utm?.y,
+                    utmZone,
+                    timestamp: new Date().toISOString()
+                };
+                
+                points.unshift(point);
+                localStorage.setItem('geoPoints', JSON.stringify(points));
+                
+                updateUI();
+                updateMap();
+                
+                // Feedback tátil se disponível
+                if (navigator.vibrate) navigator.vibrate(50);
+                
+                showToast('✓ Localização capturada!');
+                
+            } catch (error) {
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        // Monitoramento GPS contínuo
+        function startGPSMonitoring() {
+            if (!navigator.geolocation) return;
+            
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude, accuracy } = position.coords;
+                    
+                    // Atualizar display
+                    document.getElementById('liveLat').textContent = latitude.toFixed(6) + '°';
+                    document.getElementById('liveLng').textContent = longitude.toFixed(6) + '°';
+                    
+                    const utm = toUTM(latitude, longitude, utmZone);
+                    document.getElementById('liveUtm').textContent = utm ? 
+                        `${Math.round(utm.x)}, ${Math.round(utm.y)}` : '--';
+                    
+                    // Atualizar status
+                    const statusEl = document.getElementById('gpsStatusHeader');
+                    const textEl = document.getElementById('gpsText');
+                    
+                    statusEl.className = 'gps-status-pill gps-active';
+                    textEl.textContent = accuracy < 10 ? 'GPS OK' : 'GPS';
+                    
+                },
+                (error) => {
+                    document.getElementById('gpsStatusHeader').className = 'gps-status-pill gps-inactive';
+                },
+                { enableHighAccuracy: true, maximumAge: 5000 }
+            );
+        }
+
+        // Atualizar mapa
+        function updateMap() {
+            // Limpar marcadores
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+            
+            if (points.length === 0) return;
+            
+            const group = L.featureGroup();
+            
+            points.forEach((point, index) => {
+                const marker = L.circleMarker([point.lat, point.lng], {
+                    radius: 8,
+                    fillColor: index === 0 ? '#0ea5e9' : '#6366f1',
+                    color: '#fff',
+                    weight: 2,
+                    fillOpacity: 0.9
+                }).addTo(map);
+                
+                marker.bindPopup(`<b>${point.name}</b><br>±${Math.round(point.accuracy)}m`);
+                markers.push(marker);
+                group.addLayer(marker);
+            });
+            
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        function centerMapOnPoint(lat, lng) {
+            switchTab('map');
+            map.setView([lat, lng], 16);
+        }
+
+        function centerOnPoints() {
+            if (points.length === 0) return;
+            const group = L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        // Ações
+        function startTracking() {
+            showToast('Rastreamento iniciado');
+        }
+
+        function clearAllPoints() {
+            if (points.length === 0) return;
+            if (!confirm(`Excluir ${points.length} pontos?`)) return;
+            
+            points = [];
+            localStorage.setItem('geoPoints', JSON.stringify(points));
+            updateUI();
+            updateMap();
+            showToast('Pontos removidos');
+        }
+
+        function exportAllData() {
+            showToast('Exportação em breve...');
+        }
+
+        function showHelp() {
+            showToast('Tutorial em desenvolvimento');
+        }
+
+        function showSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function setCoordSystem(system) {
+            coordSystem = system;
+            document.getElementById('btnGeo').className = system === 'geographic' ? 
+                'py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium' :
+                'py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium';
+            document.getElementById('btnUtm').className = system === 'utm' ? 
+                'py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium' :
+                'py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium';
+            updateCoordBadge();
+            updateUI();
+        }
+
+        function updateUTMZone() {
+            utmZone = parseInt(document.getElementById('utmZoneSelect').value);
+            updateCoordBadge();
+        }
+
+        function toggleMapLayer() {
+            showToast('Camadas em desenvolvimento');
+        }
+
+        // Toast notification
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
-            toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-lg z-50 slide-up ${
-                type === 'error' ? 'bg-red-500' : 'bg-green-500'
-            } text-white font-medium flex items-center gap-2`;
-            toast.innerHTML = `
-                <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
-                <span>${message}</span>
-            `;
+            toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-lg z-50 text-sm font-medium animate-slide-up ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white`;
+            toast.textContent = message;
             document.body.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, 20px)';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            setTimeout(() => toast.remove(), 3000);
         }
 
-        // Modal close on outside click
-        document.getElementById('editModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) closeModal();
+        // Fechar modal ao clicar fora
+        document.getElementById('settingsModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeSettings();
         });
     </script>
 </body>
