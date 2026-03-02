@@ -56,6 +56,11 @@
             user-select: none;
         }
         
+        html {
+            overscroll-behavior-y: none;
+            scroll-behavior: smooth;
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
             background: #0f172a;
@@ -66,6 +71,7 @@
             height: 100%;
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
+            touch-action: pan-y;
         }
         
         /* Container principal do app */
@@ -85,15 +91,97 @@
             padding-top: max(12px, env(safe-area-inset-top));
             flex-shrink: 0;
             z-index: 100;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         /* Área de conteúdo scrollável */
         .content-area {
             flex: 1;
+            overflow: hidden;
+            position: relative;
+            touch-action: pan-y;
+        }
+        
+        /* Container de telas com swipe */
+        .screens-container {
+            display: flex;
+            height: 100%;
+            width: 300%;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+        
+        .screen {
+            width: 33.333%;
+            height: 100%;
             overflow-y: auto;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
-            position: relative;
+            padding: 16px;
+            padding-bottom: 24px;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .screen.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* Pull to Refresh */
+        .ptr-element {
+            position: absolute;
+            top: -60px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        
+        .ptr-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(14, 165, 233, 0.2);
+            border-top-color: #0ea5e9;
+            border-radius: 50%;
+            animation: ptr-spin 0.8s linear infinite;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s;
+        }
+        
+        .ptr-element.visible .ptr-spinner {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .ptr-element.visible.ptr-ready .ptr-spinner {
+            border-top-color: #10b981;
+            animation-duration: 0.4s;
+        }
+        
+        @keyframes ptr-spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .ptr-text {
+            margin-left: 12px;
+            font-size: 14px;
+            color: #94a3b8;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.2s;
+        }
+        
+        .ptr-element.visible .ptr-text {
+            opacity: 1;
+            transform: translateY(0);
         }
         
         /* Navegação inferior estilo iOS/Android */
@@ -107,6 +195,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
+            z-index: 100;
         }
         
         .tab-item {
@@ -116,22 +205,25 @@
             gap: 4px;
             padding: 8px 16px;
             color: #64748b;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             border-radius: 12px;
+            position: relative;
+            transform: scale(0.95);
         }
         
         .tab-item:active {
-            transform: scale(0.92);
+            transform: scale(0.85);
         }
         
         .tab-item.active {
             color: #0ea5e9;
+            transform: scale(1);
         }
         
         .tab-icon {
             font-size: 24px;
-            transition: transform 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .tab-item.active .tab-icon {
@@ -142,35 +234,31 @@
             font-size: 11px;
             font-weight: 500;
             letter-spacing: 0.3px;
+            opacity: 0.8;
+            transition: all 0.2s;
+        }
+        
+        .tab-item.active .tab-label {
+            opacity: 1;
+            font-weight: 600;
         }
         
         /* Indicador de aba ativa (pill) */
         .tab-indicator {
             position: absolute;
-            bottom: 0;
-            height: 3px;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
             background: #0ea5e9;
-            border-radius: 3px 3px 0 0;
-            transition: all 0.3s ease;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        /* Telas/Abas */
-        .screen {
-            display: none;
-            height: 100%;
-            overflow-y: auto;
-            padding: 16px;
-            padding-bottom: 24px;
-        }
-        
-        .screen.active {
-            display: block;
-            animation: fadeIn 0.2s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .tab-item.active .tab-indicator {
+            opacity: 1;
+            transform: scale(1);
         }
         
         /* Componentes específicos */
@@ -185,11 +273,13 @@
             box-shadow: 0 8px 32px rgba(14, 165, 233, 0.4);
             margin: 24px auto;
             position: relative;
-            transition: transform 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
         }
         
         .capture-button:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
+            box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
         }
         
         .capture-button::before {
@@ -209,6 +299,11 @@
         .capture-button i {
             font-size: 32px;
             color: white;
+            transition: transform 0.2s;
+        }
+        
+        .capture-button:active i {
+            transform: scale(0.9);
         }
         
         .glass-card {
@@ -218,6 +313,12 @@
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .glass-card:active {
+            transform: scale(0.98);
+            background: rgba(30, 41, 59, 0.8);
         }
         
         .stat-grid {
@@ -232,12 +333,28 @@
             padding: 12px 8px;
             background: rgba(15, 23, 42, 0.5);
             border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .stat-item:active {
+            transform: scale(0.95);
+            background: rgba(15, 23, 42, 0.7);
         }
         
         .stat-value {
             font-size: 20px;
             font-weight: 700;
             color: #0ea5e9;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-value.updated {
+            animation: statUpdate 0.5s ease;
+        }
+        
+        @keyframes statUpdate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); color: #10b981; }
         }
         
         .stat-label {
@@ -251,6 +368,7 @@
             border-radius: 16px;
             overflow: hidden;
             background: #f1f5f9;
+            transition: all 0.3s ease;
         }
         
         .list-item {
@@ -261,6 +379,31 @@
             background: rgba(30, 41, 59, 0.4);
             border-radius: 12px;
             margin-bottom: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .list-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #0ea5e9, #6366f1);
+            transform: scaleY(0);
+            transition: transform 0.2s;
+        }
+        
+        .list-item:active {
+            transform: scale(0.98) translateX(4px);
+            background: rgba(30, 41, 59, 0.6);
+        }
+        
+        .list-item:active::before {
+            transform: scaleY(1);
         }
         
         .list-icon {
@@ -273,10 +416,20 @@
             justify-content: center;
             font-size: 18px;
             flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        
+        .list-item:active .list-icon {
+            transform: scale(0.9) rotate(10deg);
         }
         
         .list-content {
             flex: 1;
+            transition: transform 0.2s;
+        }
+        
+        .list-item:active .list-content {
+            transform: translateX(4px);
         }
         
         .list-title {
@@ -297,6 +450,7 @@
             font-weight: 600;
             background: rgba(16, 185, 129, 0.2);
             color: #10b981;
+            transition: all 0.2s;
         }
         
         .section-title {
@@ -307,6 +461,7 @@
             color: #64748b;
             margin: 24px 0 12px 0;
             padding-left: 4px;
+            transition: all 0.2s;
         }
         
         .about-hero {
@@ -315,6 +470,7 @@
             background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(15, 23, 42, 0) 100%);
             border-radius: 20px;
             margin-bottom: 16px;
+            transition: all 0.3s ease;
         }
         
         .about-logo {
@@ -328,6 +484,11 @@
             margin: 0 auto 16px;
             font-size: 36px;
             box-shadow: 0 8px 32px rgba(14, 165, 233, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .about-hero:active .about-logo {
+            transform: scale(0.95) rotate(5deg);
         }
         
         .about-title {
@@ -348,6 +509,13 @@
             background: rgba(30, 41, 59, 0.4);
             border-radius: 16px;
             margin-bottom: 12px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .feature-card:active {
+            transform: scale(0.98);
+            background: rgba(30, 41, 59, 0.6);
         }
         
         .feature-icon {
@@ -361,6 +529,12 @@
             color: #0ea5e9;
             font-size: 20px;
             flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        
+        .feature-card:active .feature-icon {
+            transform: scale(0.9);
+            background: rgba(14, 165, 233, 0.2);
         }
         
         .gps-status-pill {
@@ -372,6 +546,7 @@
             font-size: 12px;
             font-weight: 600;
             margin-left: auto;
+            transition: all 0.3s ease;
         }
         
         .gps-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
@@ -399,6 +574,142 @@
                 padding-bottom: calc(8px + env(safe-area-inset-bottom));
             }
         }
+        
+        /* Animações de entrada */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        
+        .animate-slide-right {
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        
+        .animate-slide-left {
+            animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        
+        /* Toast melhorado */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            pointer-events: none;
+        }
+        
+        .toast {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 24px;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-20px) scale(0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 8px;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        
+        .toast.success { border-left: 3px solid #10b981; }
+        .toast.error { border-left: 3px solid #ef4444; }
+        .toast.info { border-left: 3px solid #0ea5e9; }
+        
+        /* Skeleton loading */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(30, 41, 59, 0.4) 25%, rgba(30, 41, 59, 0.6) 50%, rgba(30, 41, 59, 0.4) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 8px;
+        }
+        
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Scrollbar estilizada */
+        .screen::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .screen::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .screen::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.3);
+            border-radius: 2px;
+        }
+        
+        .screen::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.5);
+        }
+        
+        /* Efeito de ripple */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        /* Transição de página suave */
+        .page-transition-enter {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        
+        .page-transition-enter-active {
+            opacity: 1;
+            transform: translateX(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .page-transition-exit {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .page-transition-exit-active {
+            opacity: 0;
+            transform: translateX(-100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
 <body>
@@ -422,277 +733,290 @@
             </div>
         </header>
 
-        <!-- CONTEÚDO -->
-        <main class="content-area">
+        <!-- CONTEÚDO COM SWIPE -->
+        <main class="content-area" id="mainContent">
+            <!-- Pull to Refresh Indicator -->
+            <div class="ptr-element" id="ptrElement">
+                <div class="ptr-spinner"></div>
+                <span class="ptr-text">Puxe para atualizar</span>
+            </div>
             
-            <!-- ABA 1: CAPTURAR -->
-            <section id="tab-capture" class="screen active">
-                <!-- Status do GPS -->
-                <div class="glass-card">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-sm font-medium text-slate-300">Status do Sistema</span>
-                        <span id="coordSystemBadge" class="badge">UTM 22S</span>
+            <div class="screens-container" id="screensContainer">
+                <!-- ABA 1: CAPTURAR -->
+                <section id="tab-capture" class="screen active" data-tab="capture">
+                    <!-- Status do GPS -->
+                    <div class="glass-card animate-slide-up" style="animation-delay: 0.1s">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-medium text-slate-300">Status do Sistema</span>
+                            <span id="coordSystemBadge" class="badge">UTM 22S</span>
+                        </div>
+                        
+                        <div class="stat-grid">
+                            <div class="stat-item">
+                                <div id="countPoints" class="stat-value">0</div>
+                                <div class="stat-label">Pontos</div>
+                            </div>
+                            <div class="stat-item">
+                                <div id="currentAccuracy" class="stat-value">--</div>
+                                <div class="stat-label">Precisão (m)</div>
+                            </div>
+                            <div class="stat-item">
+                                <div id="lastUpdate" class="stat-value">--:--</div>
+                                <div class="stat-label">Último</div>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Botão Principal de Captura -->
+                    <div class="text-center py-8 animate-slide-up" style="animation-delay: 0.2s">
+                        <p class="text-slate-400 text-sm mb-6">Toque para capturar coordenadas GPS</p>
+                        
+                        <div class="capture-button" id="captureBtn">
+                            <i class="fas fa-crosshairs"></i>
+                        </div>
+                        
+                        <p id="captureHint" class="text-xs text-slate-500 mt-4 max-w-xs mx-auto">
+                            Aguarde o GPS estabilizar para melhor precisão
+                        </p>
+                    </div>
+
+                    <!-- Coordenadas em Tempo Real -->
+                    <div class="glass-card animate-slide-up" style="animation-delay: 0.3s">
+                        <h3 class="section-title">Coordenadas Atuais</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                                <span class="text-slate-400 text-sm">Latitude</span>
+                                <span id="liveLat" class="font-mono text-primary transition-all">--</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
+                                <span class="text-slate-400 text-sm">Longitude</span>
+                                <span id="liveLng" class="font-mono text-primary transition-all">--</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-slate-400 text-sm">UTM (X, Y)</span>
+                                <span id="liveUtm" class="font-mono text-secondary transition-all">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ações Secundárias -->
+                    <div class="grid grid-cols-2 gap-3 mt-4 animate-slide-up" style="animation-delay: 0.4s">
+                        <button id="btnTrack" class="glass-card py-4 flex items-center justify-center gap-2 text-sm font-medium active:scale-95 transition-all">
+                            <i class="fas fa-play text-green-400"></i>
+                            Rastrear
+                        </button>
+                        <button id="btnClear" class="glass-card py-4 flex items-center justify-center gap-2 text-sm font-medium text-red-400 active:scale-95 transition-all">
+                            <i class="fas fa-trash-alt"></i>
+                            Limpar
+                        </button>
+                    </div>
+
+                    <!-- Lista Recente -->
+                    <h3 class="section-title animate-slide-up" style="animation-delay: 0.5s">Capturas Recentes</h3>
+                    <div id="recentPointsList" class="space-y-2 animate-slide-up" style="animation-delay: 0.6s">
+                        <div class="text-center text-slate-500 py-8">
+                            <i class="fas fa-inbox text-3xl mb-2 opacity-50"></i>
+                            <p class="text-sm">Nenhum ponto capturado</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ABA 2: MAPA -->
+                <section id="tab-map" class="screen" data-tab="map">
+                    <!-- Controles do Mapa -->
+                    <div class="glass-card mb-4 animate-slide-up">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold">Visualização do Mapa</h3>
+                                <p id="mapPointCount" class="text-xs text-slate-400 mt-1">0 pontos no mapa</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="centerOnPoints()" class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center text-sm active:scale-90 transition-transform">
+                                    <i class="fas fa-compress-arrows-alt"></i>
+                                </button>
+                                <button onclick="toggleMapLayer()" class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center text-sm active:scale-90 transition-transform">
+                                    <i class="fas fa-layer-group"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mapa -->
+                    <div id="map" class="map-container-native mb-4 animate-slide-up" style="animation-delay: 0.1s"></div>
+
+                    <!-- Lista de Pontos no Mapa -->
+                    <h3 class="section-title animate-slide-up" style="animation-delay: 0.2s">Pontos no Mapa</h3>
+                    <div id="mapPointsList" class="space-y-2 pb-20 animate-slide-up" style="animation-delay: 0.3s">
+                        <div class="text-center text-slate-500 py-8">
+                            <i class="fas fa-map-marked-alt text-3xl mb-2 opacity-50"></i>
+                            <p class="text-sm">Capture pontos para visualizar no mapa</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ABA 3: SOBRE -->
+                <section id="tab-about" class="screen" data-tab="about">
+                    <!-- Hero -->
+                    <div class="about-hero animate-slide-up">
+                        <div class="about-logo">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h2 class="about-title">GeoCollector UFT</h2>
+                        <p class="about-subtitle">v1.0.0 • Sensoriamento Remoto e SIG</p>
+                    </div>
+
+                    <!-- Instituição -->
+                    <div class="glass-card text-center py-6 animate-slide-up" style="animation-delay: 0.1s">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-900/30 border border-blue-700/30 mb-4">
+                            <i class="fas fa-university text-blue-400"></i>
+                            <span class="text-sm text-blue-200 font-medium">UFT - Campus Gurupi</span>
+                        </div>
+                        <p class="text-sm text-slate-400">Curso de Agronomia</p>
+                        <p class="text-xs text-slate-500 mt-1">Disciplina de Sensoriamento Remoto e SIG</p>
+                    </div>
+
+                    <!-- Funcionalidades -->
+                    <h3 class="section-title animate-slide-up" style="animation-delay: 0.2s">Funcionalidades</h3>
                     
-                    <div class="stat-grid">
-                        <div class="stat-item">
-                            <div id="countPoints" class="stat-value">0</div>
-                            <div class="stat-label">Pontos</div>
+                    <div class="feature-card animate-slide-up" style="animation-delay: 0.3s">
+                        <div class="feature-icon">
+                            <i class="fas fa-crosshairs"></i>
                         </div>
-                        <div class="stat-item">
-                            <div id="currentAccuracy" class="stat-value">--</div>
-                            <div class="stat-label">Precisão (m)</div>
-                        </div>
-                        <div class="stat-item">
-                            <div id="lastUpdate" class="stat-value">--:--</div>
-                            <div class="stat-label">Último</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Botão Principal de Captura -->
-                <div class="text-center py-8">
-                    <p class="text-slate-400 text-sm mb-6">Toque para capturar coordenadas GPS</p>
-                    
-                    <div class="capture-button" onclick="captureLocation()">
-                        <i class="fas fa-crosshairs"></i>
-                    </div>
-                    
-                    <p id="captureHint" class="text-xs text-slate-500 mt-4 max-w-xs mx-auto">
-                        Aguarde o GPS estabilizar para melhor precisão
-                    </p>
-                </div>
-
-                <!-- Coordenadas em Tempo Real -->
-                <div class="glass-card">
-                    <h3 class="section-title">Coordenadas Atuais</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
-                            <span class="text-slate-400 text-sm">Latitude</span>
-                            <span id="liveLat" class="font-mono text-primary">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2 border-b border-slate-700/50">
-                            <span class="text-slate-400 text-sm">Longitude</span>
-                            <span id="liveLng" class="font-mono text-primary">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2">
-                            <span class="text-slate-400 text-sm">UTM (X, Y)</span>
-                            <span id="liveUtm" class="font-mono text-secondary">--</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ações Secundárias -->
-                <div class="grid grid-cols-2 gap-3 mt-4">
-                    <button onclick="startTracking()" id="btnTrack" class="glass-card py-4 flex items-center justify-center gap-2 text-sm font-medium active:scale-95 transition-transform">
-                        <i class="fas fa-play text-green-400"></i>
-                        Rastrear
-                    </button>
-                    <button onclick="clearAllPoints()" class="glass-card py-4 flex items-center justify-center gap-2 text-sm font-medium text-red-400 active:scale-95 transition-transform">
-                        <i class="fas fa-trash-alt"></i>
-                        Limpar
-                    </button>
-                </div>
-
-                <!-- Lista Recente -->
-                <h3 class="section-title">Capturas Recentes</h3>
-                <div id="recentPointsList" class="space-y-2">
-                    <div class="text-center text-slate-500 py-8">
-                        <i class="fas fa-inbox text-3xl mb-2 opacity-50"></i>
-                        <p class="text-sm">Nenhum ponto capturado</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ABA 2: MAPA -->
-            <section id="tab-map" class="screen">
-                <!-- Controles do Mapa -->
-                <div class="glass-card mb-4">
-                    <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="font-semibold">Visualização do Mapa</h3>
-                            <p id="mapPointCount" class="text-xs text-slate-400 mt-1">0 pontos no mapa</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="centerOnPoints()" class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center text-sm">
-                                <i class="fas fa-compress-arrows-alt"></i>
-                            </button>
-                            <button onclick="toggleMapLayer()" class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center text-sm">
-                                <i class="fas fa-layer-group"></i>
-                            </button>
+                            <h4 class="font-semibold mb-1">Coleta de Pontos GPS</h4>
+                            <p class="text-sm text-slate-400">Captura precisa de coordenadas geográficas com monitoramento em tempo real da precisão do sinal.</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Mapa -->
-                <div id="map" class="map-container-native mb-4"></div>
-
-                <!-- Lista de Pontos no Mapa -->
-                <h3 class="section-title">Pontos no Mapa</h3>
-                <div id="mapPointsList" class="space-y-2 pb-20">
-                    <div class="text-center text-slate-500 py-8">
-                        <i class="fas fa-map-marked-alt text-3xl mb-2 opacity-50"></i>
-                        <p class="text-sm">Capture pontos para visualizar no mapa</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ABA 3: SOBRE -->
-            <section id="tab-about" class="screen">
-                <!-- Hero -->
-                <div class="about-hero">
-                    <div class="about-logo">
-                        <i class="fas fa-map-marker-alt"></i>
-                    </div>
-                    <h2 class="about-title">GeoCollector UFT</h2>
-                    <p class="about-subtitle">v1.0.0 • Sensoriamento Remoto e SIG</p>
-                </div>
-
-                <!-- Instituição -->
-                <div class="glass-card text-center py-6">
-                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-900/30 border border-blue-700/30 mb-4">
-                        <i class="fas fa-university text-blue-400"></i>
-                        <span class="text-sm text-blue-200 font-medium">UFT - Campus Gurupi</span>
-                    </div>
-                    <p class="text-sm text-slate-400">Curso de Agronomia</p>
-                    <p class="text-xs text-slate-500 mt-1">Disciplina de Sensoriamento Remoto e SIG</p>
-                </div>
-
-                <!-- Funcionalidades -->
-                <h3 class="section-title">Funcionalidades</h3>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-crosshairs"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-1">Coleta de Pontos GPS</h4>
-                        <p class="text-sm text-slate-400">Captura precisa de coordenadas geográficas com monitoramento em tempo real da precisão do sinal.</p>
-                    </div>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-map"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-1">Sistema UTM</h4>
-                        <p class="text-sm text-slate-400">Conversão automática para coordenadas UTM com suporte a múltiplas zonas (fusos).</p>
-                    </div>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-draw-polygon"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-1">Cálculo de Área</h4>
-                        <p class="text-sm text-slate-400">Forme polígonos com pontos coletados e calcule área em m² e hectares.</p>
-                    </div>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-file-export"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-1">Exportação</h4>
-                        <p class="text-sm text-slate-400">Exporte dados em GeoJSON, KML, CSV ou relatório técnico em TXT.</p>
-                    </div>
-                </div>
-
-                <!-- Estatísticas do App -->
-                <h3 class="section-title">Estatísticas</h3>
-                <div class="glass-card">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="text-center py-3">
-                            <div id="totalPointsAllTime" class="text-2xl font-bold text-primary">0</div>
-                            <div class="text-xs text-slate-400">Pontos coletados</div>
+                    <div class="feature-card animate-slide-up" style="animation-delay: 0.4s">
+                        <div class="feature-icon">
+                            <i class="fas fa-map"></i>
                         </div>
-                        <div class="text-center py-3 border-l border-slate-700">
-                            <div id="totalAreasCalculated" class="text-2xl font-bold text-accent">0</div>
-                            <div class="text-xs text-slate-400">Áreas calculadas</div>
+                        <div>
+                            <h4 class="font-semibold mb-1">Sistema UTM</h4>
+                            <p class="text-sm text-slate-400">Conversão automática para coordenadas UTM com suporte a múltiplas zonas (fusos).</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Ações -->
-                <h3 class="section-title">Ações</h3>
-                <div class="space-y-2">
-                    <button onclick="exportAllData()" class="list-item w-full text-left active:opacity-80">
-                        <div class="list-icon">
-                            <i class="fas fa-download"></i>
+                    <div class="feature-card animate-slide-up" style="animation-delay: 0.5s">
+                        <div class="feature-icon">
+                            <i class="fas fa-draw-polygon"></i>
                         </div>
-                        <div class="list-content">
-                            <div class="list-title">Exportar Todos os Dados</div>
-                            <div class="list-subtitle">GeoJSON, CSV ou KML</div>
+                        <div>
+                            <h4 class="font-semibold mb-1">Cálculo de Área</h4>
+                            <p class="text-sm text-slate-400">Forme polígonos com pontos coletados e calcule área em m² e hectares.</p>
                         </div>
-                        <i class="fas fa-chevron-right text-slate-500"></i>
-                    </button>
+                    </div>
 
-                    <button onclick="showHelp()" class="list-item w-full text-left active:opacity-80">
-                        <div class="list-icon bg-purple-500/20 text-purple-400">
-                            <i class="fas fa-question-circle"></i>
+                    <div class="feature-card animate-slide-up" style="animation-delay: 0.6s">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-export"></i>
                         </div>
-                        <div class="list-content">
-                            <div class="list-title">Ajuda e Tutorial</div>
-                            <div class="list-subtitle">Como usar o aplicativo</div>
+                        <div>
+                            <h4 class="font-semibold mb-1">Exportação</h4>
+                            <p class="text-sm text-slate-400">Exporte dados em GeoJSON, KML, CSV ou relatório técnico em TXT.</p>
                         </div>
-                        <i class="fas fa-chevron-right text-slate-500"></i>
-                    </button>
+                    </div>
 
-                    <button onclick="showSettings()" class="list-item w-full text-left active:opacity-80">
-                        <div class="list-icon bg-slate-700">
-                            <i class="fas fa-cog"></i>
+                    <!-- Estatísticas do App -->
+                    <h3 class="section-title animate-slide-up" style="animation-delay: 0.7s">Estatísticas</h3>
+                    <div class="glass-card animate-slide-up" style="animation-delay: 0.8s">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center py-3">
+                                <div id="totalPointsAllTime" class="text-2xl font-bold text-primary">0</div>
+                                <div class="text-xs text-slate-400">Pontos coletados</div>
+                            </div>
+                            <div class="text-center py-3 border-l border-slate-700">
+                                <div id="totalAreasCalculated" class="text-2xl font-bold text-accent">0</div>
+                                <div class="text-xs text-slate-400">Áreas calculadas</div>
+                            </div>
                         </div>
-                        <div class="list-content">
-                            <div class="list-title">Configurações</div>
-                            <div class="list-subtitle">Sistema de coordenadas e zona UTM</div>
-                        </div>
-                        <i class="fas fa-chevron-right text-slate-500"></i>
-                    </button>
-                </div>
+                    </div>
 
-                <!-- Footer -->
-                <div class="text-center py-8 text-slate-500 text-xs">
-                    <p>© 2026 Universidade Federal do Tocantins</p>
-                    <p class="mt-1">Desenvolvido para fins acadêmicos</p>
-                    <p class="mt-2 text-slate-600">v1.0.0-build.{{ github.run_number }}</p>
-                </div>
-            </section>
+                    <!-- Ações -->
+                    <h3 class="section-title animate-slide-up" style="animation-delay: 0.9s">Ações</h3>
+                    <div class="space-y-2 animate-slide-up" style="animation-delay: 1s">
+                        <button onclick="exportAllData()" class="list-item w-full text-left">
+                            <div class="list-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div class="list-content">
+                                <div class="list-title">Exportar Todos os Dados</div>
+                                <div class="list-subtitle">GeoJSON, CSV ou KML</div>
+                            </div>
+                            <i class="fas fa-chevron-right text-slate-500"></i>
+                        </button>
+
+                        <button onclick="showHelp()" class="list-item w-full text-left">
+                            <div class="list-icon bg-purple-500/20 text-purple-400">
+                                <i class="fas fa-question-circle"></i>
+                            </div>
+                            <div class="list-content">
+                                <div class="list-title">Ajuda e Tutorial</div>
+                                <div class="list-subtitle">Como usar o aplicativo</div>
+                            </div>
+                            <i class="fas fa-chevron-right text-slate-500"></i>
+                        </button>
+
+                        <button onclick="showSettings()" class="list-item w-full text-left">
+                            <div class="list-icon bg-slate-700">
+                                <i class="fas fa-cog"></i>
+                            </div>
+                            <div class="list-content">
+                                <div class="list-title">Configurações</div>
+                                <div class="list-subtitle">Sistema de coordenadas e zona UTM</div>
+                            </div>
+                            <i class="fas fa-chevron-right text-slate-500"></i>
+                        </button>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="text-center py-8 text-slate-500 text-xs animate-slide-up" style="animation-delay: 1.1s">
+                        <p>© 2026 Universidade Federal do Tocantins</p>
+                        <p class="mt-1">Desenvolvido para fins acadêmicos</p>
+                        <p class="mt-2 text-slate-600">v1.0.0-build.001</p>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <!-- NAVEGAÇÃO INFERIOR -->
         <nav class="tab-bar">
-            <div class="tab-item active" onclick="switchTab('capture')" data-tab="capture">
+            <div class="tab-item active" data-tab="capture">
                 <i class="fas fa-crosshairs tab-icon"></i>
                 <span class="tab-label">Capturar</span>
+                <div class="tab-indicator"></div>
             </div>
-            <div class="tab-item" onclick="switchTab('map')" data-tab="map">
+            <div class="tab-item" data-tab="map">
                 <i class="fas fa-map tab-icon"></i>
                 <span class="tab-label">Mapa</span>
+                <div class="tab-indicator"></div>
             </div>
-            <div class="tab-item" onclick="switchTab('about')" data-tab="about">
+            <div class="tab-item" data-tab="about">
                 <i class="fas fa-info-circle tab-icon"></i>
                 <span class="tab-label">Sobre</span>
+                <div class="tab-indicator"></div>
             </div>
         </nav>
     </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <!-- Modais -->
     <!-- Modal de Configurações -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-4">
-        <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 animate-slide-up">
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 transform translate-y-full transition-transform duration-300" id="settingsModalContent">
             <h3 class="text-xl font-bold mb-4">Configurações</h3>
             
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm text-slate-400 mb-2">Sistema de Coordenadas</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button onclick="setCoordSystem('geographic')" id="btnGeo" class="py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium">
+                        <button onclick="setCoordSystem('geographic')" id="btnGeo" class="py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium transition-all active:scale-95">
                             Lat/Long
                         </button>
-                        <button onclick="setCoordSystem('utm')" id="btnUtm" class="py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium">
+                        <button onclick="setCoordSystem('utm')" id="btnUtm" class="py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium transition-all active:scale-95">
                             UTM
                         </button>
                     </div>
@@ -700,7 +1024,7 @@
                 
                 <div>
                     <label class="block text-sm text-slate-400 mb-2">Zona UTM</label>
-                    <select id="utmZoneSelect" onchange="updateUTMZone()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white">
+                    <select id="utmZoneSelect" onchange="updateUTMZone()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary focus:outline-none transition-colors">
                         <option value="22">Zona 22S (Tocantins)</option>
                         <option value="23">Zona 23S (Maranhão)</option>
                         <option value="21">Zona 21S (Goiás)</option>
@@ -709,7 +1033,7 @@
                 </div>
             </div>
             
-            <button onclick="closeSettings()" class="w-full mt-6 py-3 bg-primary rounded-xl font-medium">
+            <button onclick="closeSettings()" class="w-full mt-6 py-3 bg-primary rounded-xl font-medium active:scale-95 transition-transform">
                 Fechar
             </button>
         </div>
@@ -725,6 +1049,20 @@
         let utmZone = 22;
         let map = null;
         let markers = [];
+        let isTracking = false;
+        let trackingInterval = null;
+
+        // Configurações de Haptic Feedback
+        const HAPTIC = {
+            LIGHT: 10,
+            MEDIUM: 20,
+            HEAVY: 30,
+            SUCCESS: [50, 100, 50],
+            ERROR: [100, 50, 100, 50, 100],
+            TAP: 15,
+            SWIPE: 8,
+            REFRESH: [20, 30, 20]
+        };
 
         // UTM Projections
         const utmProjections = {
@@ -738,6 +1076,9 @@
         // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
             initMap();
+            initPullToRefresh();
+            initSwipeGestures();
+            initHapticFeedback();
             updateUI();
             startGPSMonitoring();
             
@@ -745,10 +1086,238 @@
             if (window.matchMedia('(display-mode: standalone)').matches) {
                 document.body.classList.add('standalone');
             }
+            
+            // Event listeners para botões
+            document.getElementById('captureBtn').addEventListener('click', captureLocation);
+            document.getElementById('btnTrack').addEventListener('click', toggleTracking);
+            document.getElementById('btnClear').addEventListener('click', clearAllPoints);
+            
+            // Tab items
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    const tabName = tab.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
         });
 
-        // Navegação entre abas
+        // Sistema de Haptic Feedback Avançado
+        function initHapticFeedback() {
+            // Adicionar ripple effect em todos os elementos clicáveis
+            const clickables = document.querySelectorAll('button, .capture-button, .list-item, .tab-item, .glass-card');
+            clickables.forEach(el => {
+                el.addEventListener('touchstart', handleTouchStart, {passive: true});
+                el.addEventListener('click', createRipple);
+            });
+        }
+
+        function handleTouchStart(e) {
+            // Haptic leve no toque inicial
+            vibrate(HAPTIC.TAP);
+        }
+
+        function createRipple(e) {
+            const button = e.currentTarget;
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            
+            button.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        function vibrate(pattern) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        // Pull to Refresh Implementation
+        function initPullToRefresh() {
+            const ptrElement = document.getElementById('ptrElement');
+            const screensContainer = document.getElementById('screensContainer');
+            let startY = 0;
+            let currentY = 0;
+            let isPulling = false;
+            let isRefreshing = false;
+            const threshold = 80;
+            const maxPull = 120;
+
+            const activeScreen = document.querySelector('.screen.active');
+            if (!activeScreen) return;
+
+            activeScreen.addEventListener('touchstart', handleTouchStart, {passive: true});
+            activeScreen.addEventListener('touchmove', handleTouchMove, {passive: false});
+            activeScreen.addEventListener('touchend', handleTouchEnd, {passive: true});
+
+            function handleTouchStart(e) {
+                if (activeScreen.scrollTop === 0 && !isRefreshing) {
+                    startY = e.touches[0].clientY;
+                    isPulling = true;
+                }
+            }
+
+            function handleTouchMove(e) {
+                if (!isPulling || isRefreshing) return;
+                
+                currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                
+                if (diff > 0 && activeScreen.scrollTop === 0) {
+                    e.preventDefault();
+                    
+                    const pullDistance = Math.min(diff * 0.5, maxPull);
+                    const opacity = Math.min(diff / threshold, 1);
+                    const scale = 0.8 + (Math.min(diff / threshold, 1) * 0.2);
+                    
+                    ptrElement.style.transform = `translateY(${pullDistance}px)`;
+                    ptrElement.style.opacity = opacity;
+                    ptrElement.classList.add('visible');
+                    
+                    if (diff >= threshold) {
+                        ptrElement.classList.add('ptr-ready');
+                        ptrElement.querySelector('.ptr-text').textContent = 'Solte para atualizar';
+                    } else {
+                        ptrElement.classList.remove('ptr-ready');
+                        ptrElement.querySelector('.ptr-text').textContent = 'Puxe para atualizar';
+                    }
+                    
+                    // Haptic feedback progressivo
+                    if (diff > threshold && diff < threshold + 10) {
+                        vibrate(HAPTIC.LIGHT);
+                    }
+                }
+            }
+
+            function handleTouchEnd(e) {
+                if (!isPulling) return;
+                
+                const diff = currentY - startY;
+                
+                if (diff >= threshold && !isRefreshing) {
+                    isRefreshing = true;
+                    ptrElement.querySelector('.ptr-text').textContent = 'Atualizando...';
+                    vibrate(HAPTIC.REFRESH);
+                    
+                    // Simular refresh
+                    setTimeout(() => {
+                        refreshData();
+                        resetPullToRefresh();
+                    }, 1500);
+                } else {
+                    resetPullToRefresh();
+                }
+                
+                isPulling = false;
+            }
+
+            function resetPullToRefresh() {
+                ptrElement.style.transition = 'transform 0.3s, opacity 0.3s';
+                ptrElement.style.transform = 'translateY(0)';
+                ptrElement.style.opacity = '0';
+                ptrElement.classList.remove('visible', 'ptr-ready');
+                
+                setTimeout(() => {
+                    ptrElement.style.transition = '';
+                    isRefreshing = false;
+                }, 300);
+            }
+
+            function refreshData() {
+                // Recarregar dados do localStorage
+                points = JSON.parse(localStorage.getItem('geoPoints')) || [];
+                updateUI();
+                updateMap();
+                showToast('Dados atualizados', 'success');
+            }
+        }
+
+        // Swipe entre abas
+        function initSwipeGestures() {
+            const container = document.getElementById('screensContainer');
+            let startX = 0;
+            let currentX = 0;
+            let isSwiping = false;
+            const threshold = 50;
+            const tabs = ['capture', 'map', 'about'];
+            
+            container.addEventListener('touchstart', handleStart, {passive: true});
+            container.addEventListener('touchmove', handleMove, {passive: true});
+            container.addEventListener('touchend', handleEnd, {passive: true});
+
+            function handleStart(e) {
+                startX = e.touches[0].clientX;
+                isSwiping = true;
+                container.style.transition = 'none';
+            }
+
+            function handleMove(e) {
+                if (!isSwiping) return;
+                
+                currentX = e.touches[0].clientX;
+                const diff = currentX - startX;
+                const currentIndex = tabs.indexOf(currentTab);
+                
+                // Prevenir swipe no primeiro e último item
+                if ((currentIndex === 0 && diff > 0) || (currentIndex === tabs.length - 1 && diff < 0)) {
+                    return;
+                }
+                
+                const translateX = -(currentIndex * 33.333) + (diff / window.innerWidth * 33.333);
+                container.style.transform = `translateX(${translateX}%)`;
+            }
+
+            function handleEnd(e) {
+                if (!isSwiping) return;
+                
+                const diff = currentX - startX;
+                const currentIndex = tabs.indexOf(currentTab);
+                
+                container.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+                
+                if (Math.abs(diff) > threshold) {
+                    if (diff > 0 && currentIndex > 0) {
+                        // Swipe para direita - aba anterior
+                        switchTab(tabs[currentIndex - 1]);
+                        vibrate(HAPTIC.SWIPE);
+                    } else if (diff < 0 && currentIndex < tabs.length - 1) {
+                        // Swipe para esquerda - próxima aba
+                        switchTab(tabs[currentIndex + 1]);
+                        vibrate(HAPTIC.SWIPE);
+                    } else {
+                        // Voltar para posição original
+                        updateContainerPosition();
+                    }
+                } else {
+                    updateContainerPosition();
+                }
+                
+                isSwiping = false;
+            }
+
+            function updateContainerPosition() {
+                const currentIndex = tabs.indexOf(currentTab);
+                container.style.transform = `translateX(-${currentIndex * 33.333}%)`;
+            }
+        }
+
+        // Navegação entre abas aprimorada
         function switchTab(tabName) {
+            if (tabName === currentTab) return;
+            
+            const tabs = ['capture', 'map', 'about'];
+            const currentIndex = tabs.indexOf(currentTab);
+            const newIndex = tabs.indexOf(tabName);
+            const direction = newIndex > currentIndex ? 'left' : 'right';
+            
             // Atualizar tabs visuais
             document.querySelectorAll('.tab-item').forEach(tab => {
                 tab.classList.remove('active');
@@ -757,13 +1326,31 @@
                 }
             });
             
-            // Esconder todas as telas
-            document.querySelectorAll('.screen').forEach(screen => {
+            // Animar screens
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(screen => {
                 screen.classList.remove('active');
+                screen.style.opacity = '0';
+                screen.style.transform = 'scale(0.95)';
             });
             
-            // Mostrar tela selecionada
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+            // Mover container
+            const container = document.getElementById('screensContainer');
+            container.style.transform = `translateX(-${newIndex * 33.333}%)`;
+            
+            // Ativar nova screen com delay para animação suave
+            setTimeout(() => {
+                const newScreen = document.getElementById(`tab-${tabName}`);
+                newScreen.classList.add('active');
+                newScreen.style.opacity = '1';
+                newScreen.style.transform = 'scale(1)';
+                
+                // Re-inicializar pull to refresh na nova aba
+                if (tabName === 'capture') {
+                    setTimeout(initPullToRefresh, 100);
+                }
+            }, 50);
+            
             currentTab = tabName;
             
             // Ações específicas por tab
@@ -771,8 +1358,11 @@
                 setTimeout(() => {
                     map.invalidateSize();
                     updateMap();
-                }, 100);
+                }, 350);
             }
+            
+            // Haptic feedback
+            vibrate(HAPTIC.LIGHT);
         }
 
         // Inicializar mapa
@@ -803,11 +1393,20 @@
             badge.textContent = coordSystem === 'utm' ? `UTM ${utmZone}S` : 'Lat/Long';
         }
 
-        // Estatísticas
+        // Estatísticas com animação
         function updateStats() {
-            document.getElementById('countPoints').textContent = points.length;
-            document.getElementById('mapPointCount').textContent = `${points.length} pontos no mapa`;
-            document.getElementById('totalPointsAllTime').textContent = points.length;
+            const countEl = document.getElementById('countPoints');
+            const oldCount = parseInt(countEl.textContent) || 0;
+            const newCount = points.length;
+            
+            if (oldCount !== newCount) {
+                countEl.classList.add('updated');
+                setTimeout(() => countEl.classList.remove('updated'), 500);
+            }
+            
+            countEl.textContent = newCount;
+            document.getElementById('mapPointCount').textContent = `${newCount} pontos no mapa`;
+            document.getElementById('totalPointsAllTime').textContent = newCount;
             
             if (points.length > 0) {
                 const last = points[0];
@@ -840,7 +1439,7 @@
                 });
                 
                 return `
-                    <div class="glass-card flex items-center gap-3 py-3">
+                    <div class="glass-card flex items-center gap-3 py-3 animate-slide-up" style="animation-delay: ${index * 0.1}s">
                         <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                             <span class="text-primary font-bold text-sm">${index + 1}</span>
                         </div>
@@ -877,7 +1476,7 @@
                 const coords = formatCoords(point);
                 
                 return `
-                    <div class="list-item" onclick="centerMapOnPoint(${point.lat}, ${point.lng})">
+                    <div class="list-item" onclick="centerMapOnPoint(${point.lat}, ${point.lng})" style="animation-delay: ${index * 0.05}s">
                         <div class="list-icon">
                             <span class="font-bold text-sm">${index + 1}</span>
                         </div>
@@ -916,11 +1515,12 @@
             }
         }
 
-        // Capturar localização
+        // Capturar localização com feedback tátil avançado
         async function captureLocation() {
+            vibrate(HAPTIC.MEDIUM);
+            
             const btn = document.querySelector('.capture-button');
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => btn.style.transform = '', 150);
+            btn.style.transform = 'scale(0.9)';
             
             try {
                 const position = await new Promise((resolve, reject) => {
@@ -949,13 +1549,19 @@
                 updateUI();
                 updateMap();
                 
-                // Feedback tátil se disponível
-                if (navigator.vibrate) navigator.vibrate(50);
-                
-                showToast('✓ Localização capturada!');
+                // Feedback de sucesso
+                setTimeout(() => {
+                    btn.style.transform = 'scale(1)';
+                    vibrate(HAPTIC.SUCCESS);
+                    showToast('✓ Localização capturada!', 'success');
+                }, 200);
                 
             } catch (error) {
-                showToast('Erro: ' + error.message, 'error');
+                setTimeout(() => {
+                    btn.style.transform = 'scale(1)';
+                    vibrate(HAPTIC.ERROR);
+                    showToast('Erro: ' + error.message, 'error');
+                }, 200);
             }
         }
 
@@ -967,13 +1573,27 @@
                 (position) => {
                     const { latitude, longitude, accuracy } = position.coords;
                     
-                    // Atualizar display
-                    document.getElementById('liveLat').textContent = latitude.toFixed(6) + '°';
-                    document.getElementById('liveLng').textContent = longitude.toFixed(6) + '°';
+                    // Atualizar display com animação suave
+                    const latEl = document.getElementById('liveLat');
+                    const lngEl = document.getElementById('liveLng');
+                    const utmEl = document.getElementById('liveUtm');
                     
-                    const utm = toUTM(latitude, longitude, utmZone);
-                    document.getElementById('liveUtm').textContent = utm ? 
-                        `${Math.round(utm.x)}, ${Math.round(utm.y)}` : '--';
+                    latEl.style.opacity = '0.5';
+                    lngEl.style.opacity = '0.5';
+                    utmEl.style.opacity = '0.5';
+                    
+                    setTimeout(() => {
+                        latEl.textContent = latitude.toFixed(6) + '°';
+                        lngEl.textContent = longitude.toFixed(6) + '°';
+                        
+                        const utm = toUTM(latitude, longitude, utmZone);
+                        utmEl.textContent = utm ? 
+                            `${Math.round(utm.x)}, ${Math.round(utm.y)}` : '--';
+                        
+                        latEl.style.opacity = '1';
+                        lngEl.style.opacity = '1';
+                        utmEl.style.opacity = '1';
+                    }, 150);
                     
                     // Atualizar status
                     const statusEl = document.getElementById('gpsStatusHeader');
@@ -990,8 +1610,39 @@
             );
         }
 
+        // Toggle Tracking
+        function toggleTracking() {
+            const btn = document.getElementById('btnTrack');
+            const icon = btn.querySelector('i');
+            
+            if (isTracking) {
+                // Parar rastreamento
+                clearInterval(trackingInterval);
+                isTracking = false;
+                icon.className = 'fas fa-play text-green-400';
+                btn.innerHTML = '<i class="fas fa-play text-green-400"></i> Rastrear';
+                showToast('Rastreamento parado', 'info');
+                vibrate(HAPTIC.MEDIUM);
+            } else {
+                // Iniciar rastreamento
+                isTracking = true;
+                icon.className = 'fas fa-stop text-red-400';
+                btn.innerHTML = '<i class="fas fa-stop text-red-400"></i> Parar';
+                showToast('Rastreamento iniciado', 'success');
+                vibrate(HAPTIC.SUCCESS);
+                
+                // Capturar a cada 5 segundos
+                captureLocation();
+                trackingInterval = setInterval(() => {
+                    if (isTracking) captureLocation();
+                }, 5000);
+            }
+        }
+
         // Atualizar mapa
         function updateMap() {
+            if (!map) return;
+            
             // Limpar marcadores
             markers.forEach(m => map.removeLayer(m));
             markers = [];
@@ -1019,81 +1670,149 @@
 
         function centerMapOnPoint(lat, lng) {
             switchTab('map');
-            map.setView([lat, lng], 16);
+            setTimeout(() => {
+                map.setView([lat, lng], 16);
+                vibrate(HAPTIC.LIGHT);
+            }, 350);
         }
 
         function centerOnPoints() {
             if (points.length === 0) return;
             const group = L.featureGroup(markers);
             map.fitBounds(group.getBounds().pad(0.1));
-        }
-
-        // Ações
-        function startTracking() {
-            showToast('Rastreamento iniciado');
+            vibrate(HAPTIC.LIGHT);
         }
 
         function clearAllPoints() {
             if (points.length === 0) return;
+            
+            vibrate(HAPTIC.MEDIUM);
+            
             if (!confirm(`Excluir ${points.length} pontos?`)) return;
             
             points = [];
             localStorage.setItem('geoPoints', JSON.stringify(points));
             updateUI();
             updateMap();
-            showToast('Pontos removidos');
+            showToast('Pontos removidos', 'success');
+            vibrate(HAPTIC.SUCCESS);
         }
 
         function exportAllData() {
-            showToast('Exportação em breve...');
+            vibrate(HAPTIC.LIGHT);
+            showToast('Preparando exportação...', 'info');
+            setTimeout(() => {
+                showToast('Exportação em breve...', 'info');
+            }, 1000);
         }
 
         function showHelp() {
-            showToast('Tutorial em desenvolvimento');
+            vibrate(HAPTIC.LIGHT);
+            showToast('Tutorial em desenvolvimento', 'info');
         }
 
         function showSettings() {
-            document.getElementById('settingsModal').classList.remove('hidden');
+            vibrate(HAPTIC.LIGHT);
+            const modal = document.getElementById('settingsModal');
+            const content = document.getElementById('settingsModalContent');
+            modal.classList.remove('hidden');
+            // Trigger reflow
+            void modal.offsetWidth;
+            modal.classList.remove('opacity-0');
+            content.classList.remove('translate-y-full');
         }
 
         function closeSettings() {
-            document.getElementById('settingsModal').classList.add('hidden');
+            const modal = document.getElementById('settingsModal');
+            const content = document.getElementById('settingsModalContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            vibrate(HAPTIC.LIGHT);
         }
 
         function setCoordSystem(system) {
+            vibrate(HAPTIC.TAP);
             coordSystem = system;
             document.getElementById('btnGeo').className = system === 'geographic' ? 
-                'py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium' :
-                'py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium';
+                'py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium transition-all active:scale-95' :
+                'py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium transition-all active:scale-95';
             document.getElementById('btnUtm').className = system === 'utm' ? 
-                'py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium' :
-                'py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium';
+                'py-3 rounded-xl bg-primary/20 border border-primary text-white text-sm font-medium transition-all active:scale-95' :
+                'py-3 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium transition-all active:scale-95';
             updateCoordBadge();
             updateUI();
         }
 
         function updateUTMZone() {
+            vibrate(HAPTIC.TAP);
             utmZone = parseInt(document.getElementById('utmZoneSelect').value);
             updateCoordBadge();
+            // Recalcular UTM para pontos existentes
+            points = points.map(p => {
+                const utm = toUTM(p.lat, p.lng, utmZone);
+                return { ...p, utmX: utm?.x, utmY: utm?.y, utmZone };
+            });
+            localStorage.setItem('geoPoints', JSON.stringify(points));
+            updateUI();
         }
 
         function toggleMapLayer() {
-            showToast('Camadas em desenvolvimento');
+            vibrate(HAPTIC.LIGHT);
+            showToast('Camadas em desenvolvimento', 'info');
         }
 
-        // Toast notification
+        // Toast notification aprimorado
         function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-lg z-50 text-sm font-medium animate-slide-up ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'check-circle',
+                error: 'exclamation-circle',
+                info: 'info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas fa-${icons[type]} text-${type === 'success' ? 'green' : type === 'error' ? 'red' : 'blue'}-400"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+            
+            // Haptic feedback baseado no tipo
+            if (type === 'success') vibrate(HAPTIC.SUCCESS);
+            else if (type === 'error') vibrate(HAPTIC.ERROR);
+            else vibrate(HAPTIC.LIGHT);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         // Fechar modal ao clicar fora
         document.getElementById('settingsModal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) closeSettings();
         });
+
+        // Prevenir zoom duplo em dispositivos móveis
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
     </script>
 </body>
 </html>
