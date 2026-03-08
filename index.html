@@ -497,7 +497,7 @@
 
         /* ── MAP ── */
         .map-wrap {
-            background: #1a2a2a;
+            background: #e8eeec;
             border-radius: var(--shape-xl);
             overflow: hidden;
             border: 1px solid var(--border);
@@ -1689,13 +1689,13 @@ function renderPoints() {
 // ═══════════════════════════════════════════════════════
 function initMap() {
     map = L.map('map', { zoomControl:false, attributionControl:false }).setView([-11.7286,-49.0686],13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
     L.control.zoom({position:'bottomright'}).addTo(map);
 }
 
 function initAreaMap() {
     mapArea = L.map('mapArea', { zoomControl:false, attributionControl:false }).setView([-11.7286,-49.0686],13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(mapArea);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(mapArea);
     L.control.zoom({position:'bottomright'}).addTo(mapArea);
     updateAreaMap();
 }
