@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="GeoCollector">
+    <link rel="manifest" id="pwaManifest">
     <title>GeoCollector UFT</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -18,11 +19,7 @@
     <style>
         *, *::before, *::after { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; user-select:none; }
 
-        /* ══════════════════════════════════════
-           LIGHT THEME (padrão) — paleta agro/geo
-           ══════════════════════════════════════ */
         :root {
-            /* MD3 tokens */
             --md-sys-color-primary:#2E7D32; --md-sys-color-on-primary:#FFFFFF;
             --md-sys-color-primary-container:#C8E6C9; --md-sys-color-on-primary-container:#1B5E20;
             --md-sys-color-tertiary:#1565C0; --md-sys-color-on-tertiary:#FFFFFF;
@@ -36,15 +33,12 @@
             --md-sys-color-surface-container:#F6F8F9;
             --md-sys-color-surface-container-high:#EDF1F3;
             --md-sys-color-surface-container-highest:#E5E7EB;
-            /* semantic aliases */
             --bg:#F6F8F9; --surface:#FFFFFF; --card:#FFFFFF; --card-high:#EDF1F3;
             --primary:#2E7D32; --on-primary:#FFFFFF; --primary-container:#C8E6C9;
             --tertiary:#1565C0; --accent:#2E7D32; --warn:#E65100;
             --danger:#B00020; --text:#1C1C1C; --muted:#6B7280;
             --border:#E5E7EB; --outline:#9CA3AF;
-            /* accent light teal for highlights */
             --accent-light:#66BB6A;
-            /* shape, safe areas, elevation */
             --shape-xs:4px; --shape-sm:8px; --shape-md:12px; --shape-lg:16px; --shape-xl:28px; --shape-full:50px;
             --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
             --elev-1:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);
@@ -52,9 +46,6 @@
             --elev-3:0 8px 24px rgba(0,0,0,0.12),0 4px 8px rgba(0,0,0,0.08);
         }
 
-        /* ══════════════════════════════════════
-           DARK THEME — coerência com layout original
-           ══════════════════════════════════════ */
         [data-theme="dark"] {
             --md-sys-color-primary:#82D8C8; --md-sys-color-on-primary:#003731;
             --md-sys-color-primary-container:#00504A; --md-sys-color-on-primary-container:#9FF5E4;
@@ -92,118 +83,134 @@
         .top-nav-sub { font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0.3px; }
 
         /* GPS BADGE */
-        .gps-badge { display:flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;border-radius:var(--shape-full);font-size:12px;font-weight:700;letter-spacing:0.2px;transition:all 0.3s cubic-bezier(0.2,0,0,1);border:1.5px solid transparent; }
-        .gps-badge.active { background:rgba(46,125,50,0.1);color:#2E7D32;border-color:rgba(46,125,50,0.3); }
-        .gps-badge.inactive { background:rgba(176,0,32,0.08);color:#B00020;border-color:rgba(176,0,32,0.25); }
-        .gps-badge.searching { background:rgba(230,81,0,0.08);color:#E65100;border-color:rgba(230,81,0,0.25); }
-        [data-theme="dark"] .gps-badge.active { background:rgba(100,210,170,0.12);color:var(--accent);border-color:rgba(100,210,170,0.35); }
-        [data-theme="dark"] .gps-badge.inactive { background:rgba(255,180,171,0.1);color:var(--danger);border-color:rgba(255,180,171,0.3); }
-        [data-theme="dark"] .gps-badge.searching { background:rgba(246,197,67,0.1);color:var(--warn);border-color:rgba(246,197,67,0.3); }
-        .gps-dot { width:8px;height:8px;border-radius:50%;background:currentColor; }
-        .gps-badge.active .gps-dot { animation:gpsPulse 1.5s infinite; }
-        .gps-badge.searching .gps-dot { animation:gpsPulse 0.75s infinite; }
-        @keyframes gpsPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.65)} }
+        .gps-badge { display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--shape-full);font-size:11px;font-weight:700;transition:all 0.3s; }
+        .gps-badge.active { background:rgba(46,125,50,0.1);color:#2E7D32; }
+        .gps-badge.inactive { background:rgba(176,0,32,0.08);color:#B00020; }
+        .gps-badge.searching { background:rgba(230,81,0,0.1);color:#E65100; }
+        [data-theme="dark"] .gps-badge.active { background:rgba(130,216,200,0.12);color:var(--primary); }
+        [data-theme="dark"] .gps-badge.inactive { background:rgba(255,180,171,0.1);color:var(--danger); }
+        [data-theme="dark"] .gps-badge.searching { background:rgba(246,197,67,0.12);color:var(--warn); }
+        .gps-dot { width:7px;height:7px;border-radius:50%; }
+        .gps-badge.active .gps-dot { background:#2E7D32;box-shadow:0 0 0 2px rgba(46,125,50,0.25);animation:pulse 1.5s infinite; }
+        .gps-badge.inactive .gps-dot { background:#B00020; }
+        .gps-badge.searching .gps-dot { background:#E65100;animation:pulse 0.8s infinite; }
+        [data-theme="dark"] .gps-badge.active .gps-dot { background:var(--primary);box-shadow:0 0 0 2px rgba(130,216,200,0.25); }
+        [data-theme="dark"] .gps-badge.inactive .gps-dot { background:var(--danger); }
+        [data-theme="dark"] .gps-badge.searching .gps-dot { background:var(--warn); }
+        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
 
-        /* CONTENT */
-        .content-area { flex:1;overflow:hidden;position:relative; }
-        .screen { position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px 16px 24px;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity 0.25s cubic-bezier(0.2,0,0,1),transform 0.25s cubic-bezier(0.2,0,0,1); }
-        .screen.active { opacity:1;pointer-events:all;transform:translateY(0); }
+        /* OFFLINE BANNER */
+        #offlineBanner { display:none;position:fixed;top:calc(64px + var(--safe-top));left:0;right:0;z-index:100;background:#E65100;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:700; }
+        #offlineBanner.show { display:block; }
 
-        /* NAV BAR */
-        .tab-bar { background:var(--surface);display:flex;align-items:stretch;flex-shrink:0;padding-bottom:var(--safe-bottom);position:relative;border-top:1px solid var(--border); }
-        .tab-item { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;padding:12px 4px;color:var(--muted);cursor:pointer;position:relative;min-height:64px;transition:color 0.2s cubic-bezier(0.2,0,0,1); }
-        .tab-indicator { position:absolute;top:8px;left:50%;transform:translateX(-50%);width:64px;height:32px;border-radius:var(--shape-full);background:transparent;transition:background 0.2s cubic-bezier(0.2,0,0,1),width 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-        .tab-item.active { color:var(--md-sys-color-on-primary-container); }
-        .tab-item.active .tab-indicator { background:var(--primary-container);width:64px; }
-        .tab-icon-wrap { position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;margin-top:4px;z-index:1; }
-        .tab-icon { font-size:20px;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-        .tab-item.active .tab-icon { transform:scale(1.15); }
-        .tab-label { font-size:10px;font-weight:700;letter-spacing:0.3px;z-index:1; }
-        .tab-badge { position:absolute;top:6px;right:calc(50% - 24px);min-width:16px;height:16px;background:var(--primary);color:var(--on-primary);border-radius:var(--shape-full);font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;z-index:2; }
+        /* CONTENT AREA */
+        .content-area { flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px 16px 0;scroll-behavior:smooth; }
+        .screen { display:none; }
+        .screen.active { display:block; }
 
-        /* SECTION LABEL */
-        .section-label { font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--primary);margin:18px 4px 8px;display:flex;align-items:center;gap:8px; }
-        .section-label::after { content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(46,125,50,0.25),transparent); }
-        [data-theme="dark"] .section-label::after { background:linear-gradient(to right,rgba(130,216,200,0.2),transparent); }
+        /* BOTTOM TAB BAR */
+        .tab-bar { background:var(--surface);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:var(--safe-bottom);padding-top:4px;height:calc(62px + var(--safe-bottom));z-index:50; }
+        .tab-item { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;position:relative;padding:4px 2px;transition:all 0.2s; }
+        .tab-indicator { position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:3px;background:var(--primary);border-radius:0 0 3px 3px;opacity:0;transition:opacity 0.2s; }
+        .tab-item.active .tab-indicator { opacity:1; }
+        .tab-icon-wrap { width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--shape-sm);transition:background 0.2s; }
+        .tab-item.active .tab-icon-wrap { background:var(--primary-container); }
+        [data-theme="dark"] .tab-item.active .tab-icon-wrap { background:rgba(130,216,200,0.15); }
+        .tab-icon { font-size:16px;color:var(--muted);transition:color 0.2s; }
+        .tab-item.active .tab-icon { color:var(--primary); }
+        .tab-label { font-size:10px;font-weight:700;color:var(--muted);transition:color 0.2s;letter-spacing:0.2px; }
+        .tab-item.active .tab-label { color:var(--primary); }
+        .tab-badge { position:absolute;top:2px;right:calc(50% - 22px);background:var(--danger);color:#fff;border-radius:var(--shape-full);font-size:9px;font-weight:800;padding:1px 5px;min-width:16px;text-align:center;display:flex;align-items:center;justify-content:center; }
 
         /* CARDS */
-        .card { background:var(--card);border-radius:var(--shape-xl);padding:16px;margin-bottom:12px;border:1px solid var(--border); }
-        .card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; }
-        .card-title { font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted); }
+        .card { background:var(--card);border:1px solid var(--border);border-radius:var(--shape-xl);padding:16px;margin-bottom:12px;box-shadow:var(--elev-1); }
+        .card-header { display:flex;align-items:center;justify-content:space-between; }
+        .card-title { font-size:14px;font-weight:800;color:var(--text); }
 
-        /* STATS */
-        .stats-row { display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
-        .stat-box { background:var(--card-high);border-radius:var(--shape-lg);padding:14px 8px;text-align:center;border:1px solid var(--border); }
-        .stat-value { font-size:22px;font-weight:800;color:var(--primary);line-height:1; }
-        .stat-label { font-size:11px;color:var(--muted);margin-top:4px;font-weight:600; }
+        /* SECTION LABEL */
+        .section-label { font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);padding:4px 2px 8px;display:flex;align-items:center;gap:8px;margin:0; }
 
         /* GPS MONITOR */
-        .gps-monitor { background:linear-gradient(145deg,rgba(46,125,50,0.06) 0%,rgba(102,187,106,0.04) 100%);border:1.5px solid rgba(46,125,50,0.2);border-radius:var(--shape-xl);padding:16px;margin-bottom:12px;position:relative;overflow:hidden; }
-        .gps-monitor::before { content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;background:radial-gradient(circle,rgba(46,125,50,0.08),transparent 70%);pointer-events:none; }
-        [data-theme="dark"] .gps-monitor { background:linear-gradient(145deg,rgba(100,210,170,0.08) 0%,rgba(130,216,200,0.05) 100%);border-color:rgba(100,210,170,0.25); }
-        [data-theme="dark"] .gps-monitor::before { background:radial-gradient(circle,rgba(100,210,170,0.12),transparent 70%); }
-        .live-dot { width:8px;height:8px;background:var(--accent);border-radius:50%;animation:gpsPulse 1.2s infinite; }
-        .coord-row { display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px; }
-        .coord-row+.coord-row { border-top:1px solid var(--border); }
-        .coord-label { color:var(--muted);font-weight:500; }
-        .coord-val { font-family:'Fira Code',monospace;font-size:12px;color:var(--primary);letter-spacing:-0.3px; }
-        .acc-poor { border-color:rgba(176,0,32,0.4)!important; }
-        .acc-medium { border-color:rgba(230,81,0,0.4)!important; }
-        .acc-good { border-color:rgba(46,125,50,0.4)!important; }
-        .acc-excellent { border-color:rgba(46,125,50,0.6)!important;box-shadow:0 0 0 1px rgba(46,125,50,0.12); }
-        [data-theme="dark"] .acc-poor { border-color:rgba(255,180,171,0.4)!important; }
-        [data-theme="dark"] .acc-medium { border-color:rgba(246,197,67,0.4)!important; }
-        [data-theme="dark"] .acc-good { border-color:rgba(100,210,170,0.4)!important; }
-        [data-theme="dark"] .acc-excellent { border-color:rgba(130,216,200,0.6)!important;box-shadow:0 0 0 1px rgba(130,216,200,0.15); }
+        .gps-monitor { background:var(--card);border:1.5px solid var(--border);border-radius:var(--shape-xl);padding:16px;margin-bottom:12px;transition:border-color 0.3s; }
+        .gps-monitor.acc-excellent { border-color:rgba(46,125,50,0.5); }
+        .gps-monitor.acc-good { border-color:rgba(46,125,50,0.3); }
+        .gps-monitor.acc-medium { border-color:rgba(230,81,0,0.35); }
+        .gps-monitor.acc-poor { border-color:rgba(176,0,32,0.35); }
+        .live-dot { width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite;flex-shrink:0; }
+        .coord-row { display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border); }
+        .coord-label { font-size:11px;font-weight:600;color:var(--muted); }
+        .coord-val { font-size:13px;font-family:'Fira Code',monospace;color:var(--text);font-weight:500; }
+        .stats-row { display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
+        .stat-box { background:var(--card-high);border-radius:var(--shape-lg);padding:12px 8px;text-align:center; }
+        .stat-value { font-size:20px;font-weight:800;color:var(--text);font-family:'Fira Code',monospace; }
+        .stat-label { font-size:10px;color:var(--muted);font-weight:600;margin-top:4px;letter-spacing:0.2px; }
+
+        /* PRECISION LOCK BAR */
+        .precision-lock-bar { display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--shape-lg);margin-bottom:12px;font-size:12px;font-weight:700;border:1.5px solid;transition:all 0.3s; }
+        .precision-lock-bar.locked { background:rgba(46,125,50,0.08);border-color:rgba(46,125,50,0.3);color:var(--primary); }
+        .precision-lock-bar.waiting { background:rgba(230,81,0,0.07);border-color:rgba(230,81,0,0.25);color:var(--warn); }
+        .precision-lock-bar.no-gps { background:rgba(107,114,128,0.07);border-color:rgba(107,114,128,0.2);color:var(--muted); }
+        [data-theme="dark"] .precision-lock-bar.locked { background:rgba(130,216,200,0.1);border-color:rgba(130,216,200,0.3); }
+        [data-theme="dark"] .precision-lock-bar.waiting { background:rgba(246,197,67,0.08);border-color:rgba(246,197,67,0.25); }
+        .precision-lock-bar .plb-icon { font-size:16px;flex-shrink:0; }
+        .precision-lock-bar .plb-text { flex:1;line-height:1.3; }
+        .precision-lock-bar .plb-val { font-family:'Fira Code',monospace;font-size:13px; }
+        .plb-config-btn { background:transparent;border:none;color:inherit;cursor:pointer;font-size:13px;padding:4px;opacity:0.7; }
 
         /* BUTTONS */
-        .btn { display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:var(--shape-full);font-size:14px;font-weight:700;letter-spacing:0.1px;cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:transform 0.15s,box-shadow 0.15s,background 0.15s;width:100%;position:relative;overflow:hidden; }
+        .btn { display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:var(--shape-full);font-size:14px;font-weight:800;border:none;cursor:pointer;transition:all 0.2s;width:100%;font-family:'Nunito',sans-serif; }
         .btn:active { transform:scale(0.97); }
-        .btn:disabled { opacity:0.38;cursor:not-allowed;transform:none; }
-        .btn-primary { background:var(--primary);color:var(--on-primary);box-shadow:var(--elev-1); }
+        .btn:disabled { opacity:0.4;pointer-events:none; }
+        .btn-primary { background:var(--primary);color:var(--on-primary); }
+        .btn-primary:active { background:var(--md-sys-color-on-primary-container); }
+        .btn-fab-large { background:var(--primary);color:var(--on-primary);font-size:16px;height:58px;border-radius:var(--shape-full);box-shadow:var(--elev-2); }
+        .btn-fab-large:active { box-shadow:var(--elev-1); }
+        .btn-fab-large:disabled { background:var(--md-sys-color-surface-container-highest);color:var(--muted);box-shadow:none; }
+        .btn-accent { background:linear-gradient(135deg,var(--primary),var(--tertiary));color:#fff; }
         .btn-tonal { background:var(--primary-container);color:var(--md-sys-color-on-primary-container); }
-        .btn-accent { background:rgba(46,125,50,0.12);color:var(--primary);border:1.5px solid rgba(46,125,50,0.3); }
-        .btn-ghost { background:transparent;color:var(--text);border:1.5px solid var(--border); }
-        .btn-danger-ghost { background:rgba(176,0,32,0.06);color:var(--danger);border:1.5px solid rgba(176,0,32,0.2); }
-        .btn-whatsapp { background:rgba(37,211,102,0.1);color:#1a8a3a;border:1.5px solid rgba(37,211,102,0.3); }
-        .btn-email { background:rgba(21,101,192,0.08);color:#1565C0;border:1.5px solid rgba(21,101,192,0.25); }
-        .btn-report { background:rgba(230,81,0,0.08);color:#E65100;border:1.5px solid rgba(230,81,0,0.25); }
-        [data-theme="dark"] .btn-accent { background:rgba(100,210,170,0.2);color:var(--accent);border-color:rgba(100,210,170,0.35); }
-        [data-theme="dark"] .btn-danger-ghost { background:rgba(255,180,171,0.08);color:var(--danger);border-color:rgba(255,180,171,0.25); }
-        [data-theme="dark"] .btn-whatsapp { background:rgba(37,211,102,0.15);color:#25D366;border-color:rgba(37,211,102,0.35); }
-        [data-theme="dark"] .btn-email { background:rgba(66,133,244,0.12);color:#4285F4;border-color:rgba(66,133,244,0.3); }
-        [data-theme="dark"] .btn-report { background:rgba(246,197,67,0.12);color:var(--warn);border-color:rgba(246,197,67,0.3); }
-        .btn-sm { padding:10px 16px;font-size:13px;border-radius:var(--shape-full); }
-        .btn-icon { width:40px;height:40px;padding:0;border-radius:var(--shape-md);min-width:40px; }
-        .btn-group { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
-        .btn-fab-large { background:var(--primary);color:var(--on-primary);border-radius:var(--shape-xl);height:64px;font-size:16px;font-weight:800;box-shadow:var(--elev-2); }
-        [data-theme="dark"] .btn-fab-large { background:var(--primary-container);color:var(--md-sys-color-on-primary-container); }
-        @keyframes captureGlow { 0%,100%{box-shadow:0 0 0 0 rgba(46,125,50,0),var(--elev-2)} 50%{box-shadow:0 0 0 8px rgba(46,125,50,0.12),var(--elev-2)} }
-        [data-theme="dark"] @keyframes captureGlow { 0%,100%{box-shadow:0 0 0 0 rgba(130,216,200,0),var(--elev-2)} 50%{box-shadow:0 0 0 8px rgba(130,216,200,0.1),var(--elev-2)} }
-        .btn-fab-large:not(:disabled) { animation:captureGlow 3s ease-in-out infinite; }
-
-        /* MAP */
-        .map-wrap { background:#e8eeec;border-radius:var(--shape-xl);overflow:hidden;border:1px solid var(--border);margin-bottom:12px; }
-        .map-wrap .map-inner { height:250px;width:100%; }
-        .map-wrap-lg .map-inner { height:310px; }
-        .map-header { background:var(--card);padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
-        .map-header-title { font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:8px; }
+        .btn-ghost { background:var(--card-high);border:1.5px solid var(--border);color:var(--text); }
+        .btn-danger-ghost { background:rgba(176,0,32,0.07);border:1.5px solid rgba(176,0,32,0.2);color:var(--danger); }
+        .btn-group { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px; }
+        .btn-sm { padding:10px 16px;font-size:12px;height:auto;border-radius:var(--shape-lg); }
 
         /* POINT ITEMS */
-        .point-item { background:var(--card);border:1px solid var(--border);border-radius:var(--shape-lg);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background 0.2s,border-color 0.2s; }
-        .point-item:active { background:rgba(46,125,50,0.06);border-color:rgba(46,125,50,0.2); }
-        .point-item.selected { background:rgba(200,230,201,0.6);border-color:rgba(46,125,50,0.4); }
-        [data-theme="dark"] .point-item:active { background:rgba(130,216,200,0.06);border-color:rgba(130,216,200,0.2); }
-        [data-theme="dark"] .point-item.selected { background:rgba(0,80,74,0.35);border-color:rgba(100,210,170,0.4); }
-        .point-num { width:36px;height:36px;flex-shrink:0;background:var(--primary-container);color:var(--md-sys-color-on-primary-container);border-radius:var(--shape-md);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800; }
-        .point-num.sel { background:rgba(46,125,50,0.15);color:var(--primary); }
-        [data-theme="dark"] .point-num.sel { background:rgba(100,210,170,0.25);color:var(--accent); }
+        .point-item { background:var(--card);border:1px solid var(--border);border-radius:var(--shape-lg);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.2s; }
+        .point-item.selected { background:rgba(200,230,201,0.35);border-color:rgba(46,125,50,0.3); }
+        [data-theme="dark"] .point-item.selected { background:rgba(0,80,74,0.25);border-color:rgba(100,210,170,0.35); }
+        .point-num { width:32px;height:32px;flex-shrink:0;background:var(--primary-container);border-radius:var(--shape-sm);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--md-sys-color-on-primary-container); }
+        .point-num.sel { background:var(--primary);color:#fff; }
         .point-info { flex:1;min-width:0; }
         .point-name { font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-        .point-coords { font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);margin-top:2px; }
-        .point-meta { font-size:11px;margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap; }
-        .point-actions { display:flex;gap:6px; }
-        .icon-btn { width:36px;height:36px;background:var(--card-high);border:none;border-radius:var(--shape-md);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--muted);transition:background 0.15s,color 0.15s;font-family:inherit; }
+        .point-coords { font-size:12px;color:var(--muted);font-family:'Fira Code',monospace;font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .point-meta { display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px; }
+        .point-actions { display:flex;gap:4px; }
+        .has-photo-indicator { font-size:10px;color:var(--tertiary);font-weight:700;display:flex;align-items:center;gap:3px; }
+
+        /* MAP */
+        .map-wrap { background:var(--card-high);border-radius:var(--shape-xl);overflow:hidden;border:1px solid var(--border);margin-bottom:8px; }
+        .map-wrap-lg { height:240px; }
+        .map-wrap-lg .map-inner { height:200px; }
+        .map-wrap .map-inner { height:200px;width:100%; }
+        .map-header { padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:var(--card);border-bottom:1px solid var(--border); }
+        .map-header-title { font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px; }
+
+        /* IMPORT DROP ZONE */
+        .import-drop-zone { border:2px dashed var(--border);border-radius:var(--shape-xl);padding:28px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--card-high); }
+        .import-drop-zone.drag-over { border-color:var(--primary);background:rgba(46,125,50,0.05); }
+        .import-drop-zone i { font-size:32px;color:var(--muted);display:block;margin-bottom:10px;opacity:0.5; }
+        .import-drop-zone p { font-size:14px;font-weight:700;color:var(--muted);margin:0 0 4px; }
+        .import-drop-zone small { font-size:11px;color:var(--outline);font-weight:500; }
+
+        /* PHOTO STRIP */
+        .photo-strip { display:flex;gap:8px;overflow-x:auto;padding:4px 0;margin-bottom:10px; }
+        .photo-strip::-webkit-scrollbar { height:2px; }
+        .photo-thumb { width:64px;height:64px;border-radius:var(--shape-md);object-fit:cover;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:border-color 0.2s; }
+        .photo-thumb:hover { border-color:var(--primary); }
+        .photo-add-btn { width:64px;height:64px;border-radius:var(--shape-md);background:var(--card-high);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--muted);font-size:20px;transition:all 0.2s; }
+        .photo-add-btn:hover { border-color:var(--primary);color:var(--primary); }
+
+        /* ICON BUTTON */
+        .icon-btn { width:36px;height:36px;background:var(--card-high);border:none;border-radius:var(--shape-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:14px;transition:all 0.2s;flex-shrink:0; }
         .icon-btn:hover { background:rgba(46,125,50,0.1);color:var(--primary); }
         .icon-btn.del:hover { background:rgba(176,0,32,0.08);color:var(--danger); }
         [data-theme="dark"] .icon-btn:hover { background:rgba(130,216,200,0.12);color:var(--primary); }
@@ -335,12 +342,11 @@
         ::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.1);border-radius:2px; }
         [data-theme="dark"] ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); }
 
-        /* HERO CARDS (telas) */
+        /* HERO CARDS */
         .hero-card-area { background:linear-gradient(145deg,rgba(46,125,50,0.08),rgba(21,101,192,0.05));border-color:rgba(46,125,50,0.2)!important; }
         [data-theme="dark"] .hero-card-area { background:linear-gradient(145deg,rgba(0,80,74,0.35),rgba(0,72,130,0.2))!important;border-color:rgba(100,210,170,0.25)!important; }
         .hero-icon-area { width:48px;height:48px;background:rgba(46,125,50,0.12);border-radius:var(--shape-lg);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--primary);flex-shrink:0; }
         [data-theme="dark"] .hero-icon-area { background:rgba(100,210,170,0.2);color:var(--accent); }
-
         .hero-card-sessions { background:linear-gradient(145deg,rgba(21,101,192,0.07),rgba(46,125,50,0.05));border-color:rgba(21,101,192,0.2)!important; }
         [data-theme="dark"] .hero-card-sessions { background:linear-gradient(145deg,rgba(0,72,130,0.3),rgba(0,80,74,0.2))!important;border-color:rgba(169,199,255,0.25)!important; }
         .hero-icon-sessions { width:48px;height:48px;background:rgba(21,101,192,0.1);border-radius:var(--shape-lg);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--tertiary);flex-shrink:0; }
@@ -369,6 +375,21 @@
         /* THEME TOGGLE BUTTON */
         #themeToggle { margin-left:8px; }
 
+        /* DASHBOARD */
+        .hero-card-dash { background:linear-gradient(145deg,rgba(21,101,192,0.09),rgba(46,125,50,0.06));border-color:rgba(21,101,192,0.2)!important; }
+        [data-theme="dark"] .hero-card-dash { background:linear-gradient(145deg,rgba(0,72,130,0.35),rgba(0,80,74,0.2))!important;border-color:rgba(169,199,255,0.25)!important; }
+        .kpi-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px; }
+        .kpi-card { background:var(--card);border:1px solid var(--border);border-radius:var(--shape-lg);padding:12px 10px;text-align:center; }
+        .kpi-val { font-size:22px;font-weight:800;font-family:'Fira Code',monospace;color:var(--primary); }
+        .kpi-label { font-size:10px;color:var(--muted);font-weight:600;margin-top:3px;letter-spacing:0.2px; }
+        .chart-card { background:var(--card);border:1px solid var(--border);border-radius:var(--shape-xl);padding:16px;margin-bottom:12px; }
+        .chart-title { font-size:13px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px; }
+        .bar-chart { display:flex;flex-direction:column;gap:8px; }
+        .bar-row { display:flex;align-items:center;gap:10px; }
+        .bar-label { font-size:11px;font-weight:600;color:var(--muted);width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .bar-track { flex:1;height:10px;background:var(--card-high);border-radius:var(--shape-full);overflow:hidden; }
+        .bar-fill { height:100%;border-radius:var(--shape-full);background:var(--primary);transition:width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+        .bar-count { font-size:11px;font-weight:700;color:var(--text);min-width:24px;text-align:right; }
 
         @keyframes m3FadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         .stagger>* { animation:m3FadeUp 0.4s cubic-bezier(0.2,0,0,1) both; }
@@ -410,6 +431,7 @@
 <body>
 <div id="app">
     <div class="status-bar-space"></div>
+    <div id="offlineBanner"><i class="fas fa-wifi-slash" style="margin-right:6px"></i>Modo Offline — dados salvos localmente</div>
 
     <!-- TOP APP BAR -->
     <header class="top-nav">
@@ -464,7 +486,14 @@
                 </button>
             </div>
 
-            <p class="section-label" style="margin-top:16px">Coordenadas</p>
+            <!-- PRECISION LOCK BAR -->
+            <div id="precisionLockBar" class="precision-lock-bar no-gps" style="margin-top:10px">
+                <i class="fas fa-lock-open plb-icon"></i>
+                <div class="plb-text">Trava de Precisão: <span id="plbStatus">Aguardando GPS</span></div>
+                <button class="plb-config-btn" onclick="openPrecisionSettings()" title="Configurar limite"><i class="fas fa-sliders-h"></i></button>
+            </div>
+
+            <p class="section-label" style="margin-top:4px">Coordenadas</p>
             <div class="card">
                 <div class="card-header" style="margin-bottom:12px">
                     <span class="card-title">Sistema de Coordenadas</span>
@@ -511,6 +540,30 @@
                 </div>
             </div>
 
+            <!-- IMPORTAR CAMADA -->
+            <p class="section-label">Importar Camada</p>
+            <div class="import-drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="handleImportDrop(event)">
+                <i class="fas fa-file-import"></i>
+                <p>Importar KML / GeoJSON</p>
+                <small>Toque para selecionar ou arraste o arquivo</small>
+            </div>
+            <input type="file" id="importFileInput" accept=".kml,.geojson,.json" style="display:none" onchange="handleImportFile(this)">
+            <div id="importLayerInfo" style="display:none;margin-top:-4px;margin-bottom:12px" class="card">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <i class="fas fa-layer-group" style="color:var(--tertiary);font-size:18px"></i>
+                        <div>
+                            <div id="importLayerName" style="font-size:13px;font-weight:700">Camada importada</div>
+                            <div id="importLayerMeta" style="font-size:11px;color:var(--muted)">0 feições</div>
+                        </div>
+                    </div>
+                    <button onclick="removeImportedLayer()" class="icon-btn del"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
             <!-- COMPARTILHAR -->
             <p class="section-label">Compartilhar e Exportar</p>
             <div class="share-grid">
@@ -524,10 +577,13 @@
                     <i class="fas fa-file-pdf"></i>Relatório
                 </div>
             </div>
-            <div class="export-grid" style="margin-bottom:20px">
+            <div class="export-grid" style="margin-bottom:8px">
                 <div class="export-btn" onclick="exportData('geojson')"><i class="fas fa-file-code" style="color:var(--primary)"></i>GeoJSON</div>
                 <div class="export-btn" onclick="exportData('csv')"><i class="fas fa-file-csv" style="color:var(--accent)"></i>CSV</div>
+                <div class="export-btn" onclick="exportKMLEnhanced()"><i class="fas fa-globe" style="color:var(--warn)"></i>KML+</div>
+                <div class="export-btn" onclick="syncBackupJSON()"><i class="fas fa-cloud-download-alt" style="color:var(--tertiary)"></i>Backup JSON</div>
             </div>
+            <div style="padding-bottom:12px"></div>
         </div>
 
         <!-- ══ SCREEN 2: MAPA ══ -->
@@ -596,7 +652,7 @@
                 </div>
                 <div class="export-grid" style="margin-bottom:12px">
                     <div class="export-btn" onclick="exportPolygon('geojson')"><i class="fas fa-file-code" style="color:var(--primary)"></i>GeoJSON</div>
-                    <div class="export-btn" onclick="exportPolygon('kml')"><i class="fas fa-globe" style="color:var(--warn)"></i>KML</div>
+                    <div class="export-btn" onclick="exportPolygonKMLEnhanced()"><i class="fas fa-globe" style="color:var(--warn)"></i>KML+</div>
                     <div class="export-btn" onclick="exportPolygon('csv')"><i class="fas fa-file-csv" style="color:var(--accent)"></i>CSV</div>
                     <div class="export-btn" onclick="exportPolygon('report')"><i class="fas fa-file-alt" style="color:var(--muted)"></i>TXT</div>
                 </div>
@@ -622,8 +678,6 @@
                     <div><div style="font-size:16px;font-weight:800">Histórico de Sessões</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-weight:500">Salve e recupere diferentes saídas de campo</div></div>
                 </div>
             </div>
-
-            <!-- Sessão Atual -->
             <p class="section-label">Sessão Atual</p>
             <div class="card">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -642,20 +696,57 @@
                     </button>
                 </div>
             </div>
-
-            <!-- Sessões Salvas -->
             <p class="section-label">Sessões Salvas</p>
             <div id="sessionsList">
                 <div class="empty-state"><i class="fas fa-history"></i><p>Nenhuma sessão salva</p><small>Salve a sessão atual para acessar depois</small></div>
             </div>
         </div>
 
-        <!-- ══ SCREEN 5: SOBRE ══ -->
+        <!-- ══ SCREEN 5: DASHBOARD ══ -->
+        <div class="screen" id="screen-dashboard">
+            <div class="card hero-card-dash" style="margin-top:4px">
+                <div style="display:flex;align-items:center;gap:14px">
+                    <div style="width:48px;height:48px;background:rgba(21,101,192,0.12);border-radius:var(--shape-lg);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--tertiary);flex-shrink:0">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div><div style="font-size:16px;font-weight:800">Dashboard da Sessão</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-weight:500">Estatísticas e gráficos dos pontos coletados</div></div>
+                </div>
+            </div>
+
+            <p class="section-label">Indicadores Principais</p>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div id="dashPontos" class="kpi-val">0</div><div class="kpi-label">Pontos</div></div>
+                <div class="kpi-card"><div id="dashPrecisao" class="kpi-val" style="font-size:16px">--</div><div class="kpi-label">Precisão Méd.</div></div>
+                <div class="kpi-card"><div id="dashEspecies" class="kpi-val">0</div><div class="kpi-label">Espécies</div></div>
+                <div class="kpi-card"><div id="dashDAP" class="kpi-val" style="font-size:16px">--</div><div class="kpi-label">DAP Méd. (cm)</div></div>
+                <div class="kpi-card"><div id="dashFotos" class="kpi-val">0</div><div class="kpi-label">Fotos</div></div>
+                <div class="kpi-card"><div id="dashAltura" class="kpi-val" style="font-size:16px">--</div><div class="kpi-label">Alt. Méd. (m)</div></div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-leaf" style="color:var(--primary)"></i> Espécies / Cultivos</div>
+                <div id="chartEspecies" class="bar-chart"><div style="color:var(--muted);font-size:13px;padding:8px 0">Sem dados — registre espécies nos pontos</div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-map" style="color:var(--tertiary)"></i> Uso do Solo</div>
+                <div id="chartUsoSolo" class="bar-chart"><div style="color:var(--muted);font-size:13px;padding:8px 0">Sem dados de uso do solo</div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-ruler-horizontal" style="color:var(--warn)"></i> Classes de DAP (cm)</div>
+                <div id="chartDAP" class="bar-chart"><div style="color:var(--muted);font-size:13px;padding:8px 0">Sem dados de DAP</div></div>
+            </div>
+            <div class="chart-card" style="margin-bottom:20px">
+                <div class="chart-title"><i class="fas fa-crosshairs" style="color:var(--danger)"></i> Qualidade GPS</div>
+                <div id="chartGPS" class="bar-chart"></div>
+            </div>
+        </div>
+
+        <!-- ══ SCREEN 6: SOBRE ══ -->
         <div class="screen" id="screen-about">
             <div class="about-hero">
                 <div class="about-logo"><i class="fas fa-map-marker-alt"></i></div>
                 <div style="font-size:26px;font-weight:800;margin-bottom:6px;letter-spacing:-0.3px">GeoCollector UFT</div>
-                <div style="font-size:13px;color:var(--muted);font-weight:500">v3.0 · Sensoriamento Remoto e SIG</div>
+                <div style="font-size:13px;color:var(--muted);font-weight:500">v4.0 · Sensoriamento Remoto e SIG</div>
                 <div class="about-badge-primary">
                     <i class="fas fa-graduation-cap" style="color:var(--tertiary);font-size:12px"></i>
                     <span style="font-size:12px;color:var(--tertiary);font-weight:700">Agronomia · Engenharia Florestal · UFT</span>
@@ -683,20 +774,22 @@
                     </div>
                 </div>
             </div>
-            <p class="section-label">Funcionalidades</p>
+            <p class="section-label">Funcionalidades v4</p>
             <div class="card">
-                <div class="feature-row"><div class="feature-icon"><i class="fas fa-crosshairs"></i></div><div><div class="feature-title">Coleta de Pontos GPS</div><div class="feature-desc">Captura precisa com monitoramento em tempo real da precisão e qualidade do sinal.</div></div></div>
-                <div class="feature-row"><div class="feature-icon"><i class="fas fa-tags"></i></div><div><div class="feature-title">Atributos de Campo</div><div class="feature-desc">Registre espécie, DAP, altura, uso do solo e fitossanidade por ponto coletado.</div></div></div>
-                <div class="feature-row"><div class="feature-icon"><i class="fas fa-layer-group"></i></div><div><div class="feature-title">Histórico de Sessões</div><div class="feature-desc">Salve e recupere sessões de campo independentes por data ou atividade.</div></div></div>
-                <div class="feature-row"><div class="feature-icon"><i class="fas fa-draw-polygon"></i></div><div><div class="feature-title">Cálculo de Área</div><div class="feature-desc">Polígonos com cálculo em m² e hectares via Fórmula de Gauss em coordenadas UTM.</div></div></div>
-                <div class="feature-row"><div class="feature-icon"><i class="fas fa-share-alt"></i></div><div><div class="feature-title">Compartilhamento Direto</div><div class="feature-desc">Envio por WhatsApp, e-mail e geração de relatório técnico em PDF com um toque.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-crosshairs"></i></div><div><div class="feature-title">Coleta de Pontos GPS com Trava de Precisão</div><div class="feature-desc">Captura precisa com trava lógica configurável — o botão só ativa quando a precisão atinge o limite definido.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-camera"></i></div><div><div class="feature-title">Fotos por Ponto</div><div class="feature-desc">Capture imagens diretamente da câmera do dispositivo e associe uma ou mais fotos a cada ponto coletado.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-file-import"></i></div><div><div class="feature-title">Importação KML / GeoJSON</div><div class="feature-desc">Importe camadas de perímetros e propriedades para visualização no mapa antes ou durante a coleta.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-chart-bar"></i></div><div><div class="feature-title">Dashboard de Estatísticas</div><div class="feature-desc">Gráficos de distribuição por espécie, uso do solo, classes de DAP e qualidade GPS da sessão.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-globe"></i></div><div><div class="feature-title">Exportação KML Avançada</div><div class="feature-desc">KML com ícones coloridos por categoria compatível com Google Earth Pro e QGIS.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-cloud-download-alt"></i></div><div><div class="feature-title">Backup JSON Completo</div><div class="feature-desc">Gere backup completo da sessão (pontos + fotos + metadados) em JSON para armazenamento externo.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-wifi-slash"></i></div><div><div class="feature-title">Modo Offline (PWA)</div><div class="feature-desc">Funciona sem internet via Service Worker. Dados armazenados no IndexedDB para maior capacidade e estabilidade.</div></div></div>
             </div>
             <p class="section-label">Estatísticas da Sessão</p>
             <div class="card">
                 <div class="stats-row">
                     <div class="stat-box"><div id="aboutTotalPoints" class="stat-value">0</div><div class="stat-label">Pontos</div></div>
                     <div class="stat-box"><div id="aboutAreas" class="stat-value">0</div><div class="stat-label">Áreas calc.</div></div>
-                    <div class="stat-box"><div class="stat-value" style="font-size:13px">v3.0</div><div class="stat-label">Versão</div></div>
+                    <div class="stat-box"><div class="stat-value" style="font-size:13px">v4.0</div><div class="stat-label">Versão</div></div>
                 </div>
             </div>
             <div style="text-align:center;padding:24px 0 8px;color:var(--muted);font-size:12px;font-weight:500">
@@ -732,6 +825,11 @@
             <span class="tab-label">Sessões</span>
             <span id="sessionsBadge" class="tab-badge" style="display:none;background:var(--tertiary);color:var(--md-sys-color-on-tertiary)">0</span>
         </div>
+        <div class="tab-item" id="tab-dashboard" onclick="switchTab('dashboard')">
+            <div class="tab-indicator"></div>
+            <div class="tab-icon-wrap"><i class="fas fa-chart-bar tab-icon"></i></div>
+            <span class="tab-label">Dados</span>
+        </div>
         <div class="tab-item" id="tab-about" onclick="switchTab('about')">
             <div class="tab-indicator"></div>
             <div class="tab-icon-wrap"><i class="fas fa-info-circle tab-icon"></i></div>
@@ -740,7 +838,7 @@
     </nav>
 </div>
 
-<!-- EDIT MODAL (com atributos personalizados) -->
+<!-- EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="handleModalClick(event)">
     <div class="modal-sheet">
         <div class="modal-handle"></div>
@@ -765,8 +863,6 @@
             <label class="field-label">Descrição / Observações</label>
             <textarea id="editDesc" rows="2" class="field-input" style="resize:none" placeholder="Observações adicionais..."></textarea>
         </div>
-
-        <!-- ATRIBUTOS DE CAMPO -->
         <div style="background:rgba(130,216,200,0.06);border:1px solid rgba(130,216,200,0.15);border-radius:var(--shape-lg);padding:14px;margin-bottom:14px">
             <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px">
                 <i class="fas fa-tags"></i> Atributos de Campo
@@ -818,7 +914,14 @@
                 </select>
             </div>
         </div>
-
+        <!-- FOTOS NO MODAL DE EDIÇÃO -->
+        <div style="margin-bottom:14px">
+            <label class="field-label"><i class="fas fa-camera" style="margin-right:4px;color:var(--tertiary)"></i>Fotos do Ponto</label>
+            <div id="editPhotoStrip" class="photo-strip">
+                <div class="photo-add-btn" onclick="triggerPhotoCapture()"><i class="fas fa-camera"></i></div>
+            </div>
+            <input type="file" id="photoCaptureInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoCapture(this)">
+        </div>
         <div class="btn-group">
             <button onclick="closeModal()" class="btn btn-ghost">Cancelar</button>
             <button onclick="saveEdit()" class="btn btn-primary">Salvar</button>
@@ -842,6 +945,47 @@
     </div>
 </div>
 
+<!-- PRECISION SETTINGS MODAL -->
+<div id="precisionModal" class="modal-overlay" onclick="if(event.target===this)closePrecisionModal()">
+    <div class="modal-sheet" style="max-height:55dvh">
+        <div class="modal-handle"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <div class="modal-icon-wrap"><i class="fas fa-sliders-h"></i></div>
+            <div><div style="font-size:18px;font-weight:800">Trava de Precisão GPS</div><div style="font-size:12px;color:var(--muted)">Botão Capturar ativado apenas quando precisão ≤ limite</div></div>
+        </div>
+        <div class="field-group">
+            <label class="field-label">Limite de precisão (metros)</label>
+            <input type="number" id="precisionLimitInput" class="field-input" value="5" min="1" max="50" step="0.5">
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+            <button onclick="document.getElementById('precisionLimitInput').value=3" class="btn btn-ghost btn-sm" style="font-size:13px">3m</button>
+            <button onclick="document.getElementById('precisionLimitInput').value=5" class="btn btn-ghost btn-sm" style="font-size:13px">5m</button>
+            <button onclick="document.getElementById('precisionLimitInput').value=10" class="btn btn-ghost btn-sm" style="font-size:13px">10m</button>
+            <button onclick="document.getElementById('precisionLimitInput').value=15" class="btn btn-ghost btn-sm" style="font-size:13px">15m</button>
+        </div>
+        <div class="btn-group">
+            <button onclick="closePrecisionModal()" class="btn btn-ghost">Cancelar</button>
+            <button onclick="savePrecisionLimit()" class="btn btn-primary">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- PHOTO VIEWER MODAL -->
+<div id="photoModal" class="modal-overlay" onclick="if(event.target===this)closePhotoModal()">
+    <div class="modal-sheet" style="max-height:85dvh">
+        <div class="modal-handle"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:16px;font-weight:800"><i class="fas fa-image" style="margin-right:8px;color:var(--tertiary)"></i><span id="photoModalTitle">Foto</span></div>
+            <div style="display:flex;gap:8px">
+                <button onclick="downloadCurrentPhoto()" class="icon-btn" title="Baixar"><i class="fas fa-download"></i></button>
+                <button onclick="deleteCurrentPhoto()" class="icon-btn del" title="Excluir"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+        <img id="photoModalImg" style="width:100%;max-height:55dvh;object-fit:contain;border-radius:var(--shape-lg);background:var(--card-high)" src="">
+        <p id="photoModalMeta" style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;font-weight:500"></p>
+    </div>
+</div>
+
 <!-- REPORT PRINT -->
 <div id="reportPrint">
     <div class="report-page" id="reportContent"></div>
@@ -849,21 +993,103 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════
+'use strict';
+// ═══════════════════════════════════════════════════
+//  INDEXEDDB — armazenamento principal
+// ═══════════════════════════════════════════════════
+const DB_NAME = 'GeoCollectorUFT';
+const DB_VERSION = 1;
+let db = null;
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = e => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains('points'))    d.createObjectStore('points',    {keyPath:'id'});
+            if (!d.objectStoreNames.contains('sessions'))  d.createObjectStore('sessions',  {keyPath:'id'});
+            if (!d.objectStoreNames.contains('settings'))  d.createObjectStore('settings',  {keyPath:'key'});
+            if (!d.objectStoreNames.contains('photos'))    d.createObjectStore('photos',    {keyPath:'id'});
+        };
+        req.onsuccess = e => { db = e.target.result; resolve(db); };
+        req.onerror   = e => reject(e.target.error);
+    });
+}
+
+function dbTx(store, mode='readonly') {
+    return db.transaction(store, mode).objectStore(store);
+}
+
+function dbGet(store, key) {
+    return new Promise((res, rej) => {
+        const r = dbTx(store).get(key);
+        r.onsuccess = () => res(r.result);
+        r.onerror   = () => rej(r.error);
+    });
+}
+
+function dbPut(store, val) {
+    return new Promise((res, rej) => {
+        const r = dbTx(store, 'readwrite').put(val);
+        r.onsuccess = () => res(r.result);
+        r.onerror   = () => rej(r.error);
+    });
+}
+
+function dbDelete(store, key) {
+    return new Promise((res, rej) => {
+        const r = dbTx(store, 'readwrite').delete(key);
+        r.onsuccess = () => res();
+        r.onerror   = () => rej(r.error);
+    });
+}
+
+function dbGetAll(store) {
+    return new Promise((res, rej) => {
+        const r = dbTx(store).getAll();
+        r.onsuccess = () => res(r.result);
+        r.onerror   = () => rej(r.error);
+    });
+}
+
+function dbClear(store) {
+    return new Promise((res, rej) => {
+        const r = dbTx(store, 'readwrite').clear();
+        r.onsuccess = () => res();
+        r.onerror   = () => rej(r.error);
+    });
+}
+
+// ═══════════════════════════════════════════════════
 //  STATE
-// ═══════════════════════════════════════════════════════
-let points = JSON.parse(localStorage.getItem('geoPoints')) || [];
-let sessions = JSON.parse(localStorage.getItem('geoSessions')) || [];
-let currentSessionId = localStorage.getItem('currentSessionId') || Date.now().toString();
-let currentSessionName = localStorage.getItem('currentSessionName') || 'Sessão ' + new Date().toLocaleDateString('pt-BR');
+// ═══════════════════════════════════════════════════
+let points = [];
+let sessions = [];
+let currentSessionId   = Date.now().toString();
+let currentSessionName = 'Sessão ' + new Date().toLocaleDateString('pt-BR');
 let selectedPoints = [];
-let currentEditId = null;
+let currentEditId  = null;
 let map = null, mapArea = null, markers = [];
 let watchId = null, gpsWatchId = null;
 let isTracking = false, isMonitoring = false;
 let coordSystem = 'geographic', utmZone = 22;
 let lastCalculatedArea = null, currentTab = 'capture', areasCalcCount = 0;
 let sessionRenameCallback = null;
+let precisionLimit = 5;   // metros — trava GPS
+let lastGPSAccuracy = null;
+let importedLayer = null; // camada importada no mapa
+let currentPhotoPointId  = null;
+let currentViewPhotoIdx  = null;
+
+const CATEGORY_COLORS = {
+    monument: '#E65100', nature: '#2E7D32', infra: '#1565C0', other: '#6B7280'
+};
+const CATEGORY_KML_ICONS = {
+    monument: 'http://maps.google.com/mapfiles/kml/paddle/orange-circle.png',
+    nature:   'http://maps.google.com/mapfiles/kml/paddle/grn-circle.png',
+    infra:    'http://maps.google.com/mapfiles/kml/paddle/blue-circle.png',
+    other:    'http://maps.google.com/mapfiles/kml/paddle/wht-circle.png'
+};
 
 const utmProjections = {
     21:'+proj=utm +zone=21 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
@@ -873,16 +1099,125 @@ const utmProjections = {
 };
 const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  INIT
-// ═══════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-    initMap(); renderAll(); checkGPSPermission(); updateCoordUI(); updateSessionDisplay(); renderSessionsList();
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await openDB();
+        // Carregar configurações
+        const cfgPrecision = await dbGet('settings', 'precisionLimit');
+        if (cfgPrecision) precisionLimit = cfgPrecision.value;
+        const cfgSession = await dbGet('settings', 'currentSession');
+        if (cfgSession) { currentSessionId = cfgSession.id; currentSessionName = cfgSession.name; }
+        const cfgAreasCount = await dbGet('settings', 'areasCalcCount');
+        if (cfgAreasCount) areasCalcCount = cfgAreasCount.value;
+        // Carregar pontos e sessões
+        points   = await dbGetAll('points');
+        points.sort((a, b) => b.id - a.id);
+        sessions = await dbGetAll('sessions');
+        sessions.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+    } catch(e) {
+        // Fallback para localStorage caso IndexedDB falhe
+        points   = JSON.parse(localStorage.getItem('geoPoints'))   || [];
+        sessions = JSON.parse(localStorage.getItem('geoSessions')) || [];
+        const sid = localStorage.getItem('currentSessionId');
+        const sn  = localStorage.getItem('currentSessionName');
+        if (sid) currentSessionId   = sid;
+        if (sn)  currentSessionName = sn;
+    }
+    initMap();
+    renderAll();
+    checkGPSPermission();
+    updateCoordUI();
+    updateSessionDisplay();
+    renderSessionsList();
+    updatePrecisionLockBar(null);
+    setupOfflineDetection();
+    registerServiceWorker();
+    updatePWAManifest();
 });
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  PWA — Service Worker + Manifest
+// ═══════════════════════════════════════════════════
+function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    const swCode = `
+const CACHE='geocollector-v4';
+const STATIC=['https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+              'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(STATIC)));self.skipWaiting();});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});
+self.addEventListener('fetch',e=>{
+  if(e.request.url.includes('{s}.tile.openstreetmap')||e.request.url.includes('basemaps.cartocdn')){
+    e.respondWith(caches.open(CACHE).then(c=>c.match(e.request).then(r=>r||(fetch(e.request).then(res=>{c.put(e.request,res.clone());return res;}).catch(()=>new Response('',{status:503}))))));
+    return;
+  }
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('',{status:503}))));
+});
+`;
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    const url  = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url).catch(() => {});
+}
+
+function updatePWAManifest() {
+    const manifest = {
+        name: 'GeoCollector UFT', short_name: 'GeoCollector',
+        description: 'Coleta GPS de campo — UFT Gurupi',
+        start_url: '.', display: 'standalone',
+        background_color: '#F6F8F9', theme_color: '#2E7D32',
+        icons: [{ src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%232E7D32"/><text y="46" x="12" font-size="42">📍</text></svg>', sizes:'64x64', type:'image/svg+xml'}]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    document.getElementById('pwaManifest').href = URL.createObjectURL(blob);
+}
+
+function setupOfflineDetection() {
+    const banner = document.getElementById('offlineBanner');
+    const update = () => { banner.classList.toggle('show', !navigator.onLine); };
+    window.addEventListener('online',  update);
+    window.addEventListener('offline', update);
+    update();
+}
+
+// ═══════════════════════════════════════════════════
+//  STORAGE — IndexedDB com fallback localStorage
+// ═══════════════════════════════════════════════════
+async function savePoints() {
+    try {
+        if (!db) throw new Error('no db');
+        // Salva cada ponto individualmente
+        for (const p of points) await dbPut('points', p);
+        await dbPut('settings', {key:'currentSession', id:currentSessionId, name:currentSessionName});
+    } catch(e) {
+        localStorage.setItem('geoPoints', JSON.stringify(points));
+        localStorage.setItem('currentSessionId', currentSessionId);
+        localStorage.setItem('currentSessionName', currentSessionName);
+    }
+}
+
+async function deletePointFromDB(id) {
+    try { if (db) await dbDelete('points', id); }
+    catch(e) {}
+}
+
+async function saveSessions() {
+    try {
+        if (!db) throw new Error('no db');
+        await dbClear('sessions');
+        for (const s of sessions) await dbPut('sessions', s);
+    } catch(e) {
+        localStorage.setItem('geoSessions', JSON.stringify(sessions));
+    }
+}
+
+// ═══════════════════════════════════════════════════
 //  NAVIGATION
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function switchTab(tab) {
     if (tab === currentTab) return;
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
@@ -890,20 +1225,21 @@ function switchTab(tab) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-' + tab).classList.add('active');
     currentTab = tab;
-    if (tab === 'map') setTimeout(() => { if(map){map.invalidateSize();updateMainMap();} }, 120);
-    if (tab === 'area') { if(!mapArea) setTimeout(initAreaMap,100); else setTimeout(()=>{mapArea.invalidateSize();updateAreaMap();},120); }
-    if (tab === 'about') { document.getElementById('aboutTotalPoints').textContent=points.length; document.getElementById('aboutAreas').textContent=areasCalcCount; }
-    if (tab === 'sessions') { updateSessionDisplay(); renderSessionsList(); }
+    if (tab === 'map')       setTimeout(() => { if(map){map.invalidateSize();updateMainMap();} }, 120);
+    if (tab === 'area')      { if(!mapArea) setTimeout(initAreaMap,100); else setTimeout(()=>{mapArea.invalidateSize();updateAreaMap();},120); }
+    if (tab === 'about')     { document.getElementById('aboutTotalPoints').textContent=points.length; document.getElementById('aboutAreas').textContent=areasCalcCount; }
+    if (tab === 'sessions')  { updateSessionDisplay(); renderSessionsList(); }
+    if (tab === 'dashboard') { updateDashboard(); }
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  RENDER ALL
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function renderAll() { renderPoints(); renderAreaPointsList(); updateStats(); updateBadges(); }
 
 function updateBadges() {
     const n = points.length;
-    const mapB=document.getElementById('mapBadge'), areaB=document.getElementById('areaBadge');
+    const mapB = document.getElementById('mapBadge'), areaB = document.getElementById('areaBadge');
     if(n>0){mapB.style.display='flex';mapB.textContent=n;areaB.style.display='flex';areaB.textContent=n;}
     else{mapB.style.display='none';areaB.style.display='none';}
     document.getElementById('mapPointCount').textContent = n + ' pontos no mapa';
@@ -911,19 +1247,42 @@ function updateBadges() {
     if(sessions.length>0){sb.style.display='flex';sb.textContent=sessions.length;}else{sb.style.display='none';}
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  GPS
-// ═══════════════════════════════════════════════════════
-function showGPSStatus(type,text){document.getElementById('gpsBadge').className='gps-badge '+type;document.getElementById('gpsText').textContent=text;}
-function checkGPSPermission(){if(!navigator.geolocation){showGPSStatus('inactive','Sem suporte');return;}navigator.geolocation.getCurrentPosition(()=>showGPSStatus('active','GPS OK'),()=>showGPSStatus('inactive','Permissão negada'),{enableHighAccuracy:true});}
-
-function startGPSMonitoring(){
-    if(!navigator.geolocation){showToast('Geolocalização não suportada','error');return;}
-    isMonitoring=true;document.getElementById('startMonBtn').style.display='none';document.getElementById('gpsMonitor').style.display='block';showGPSStatus('searching','Monitorando...');
-    gpsWatchId=navigator.geolocation.watchPosition(pos=>updateLiveDisplay(pos),err=>{document.getElementById('accTip').textContent='Erro: '+err.message;},{enableHighAccuracy:true,timeout:5000,maximumAge:0});
+// ═══════════════════════════════════════════════════
+function showGPSStatus(type, text) {
+    document.getElementById('gpsBadge').className = 'gps-badge ' + type;
+    document.getElementById('gpsText').textContent = text;
 }
-function stopGPSMonitoring(){isMonitoring=false;if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}document.getElementById('startMonBtn').style.display='block';document.getElementById('gpsMonitor').style.display='none';showGPSStatus('active','GPS Ativo');}
-function updateLiveDisplay(position){
+function checkGPSPermission() {
+    if(!navigator.geolocation){showGPSStatus('inactive','Sem suporte');return;}
+    navigator.geolocation.getCurrentPosition(()=>showGPSStatus('active','GPS OK'),()=>showGPSStatus('inactive','Permissão negada'),{enableHighAccuracy:true});
+}
+
+function startGPSMonitoring() {
+    if(!navigator.geolocation){showToast('Geolocalização não suportada','error');return;}
+    isMonitoring=true;
+    document.getElementById('startMonBtn').style.display='none';
+    document.getElementById('gpsMonitor').style.display='block';
+    showGPSStatus('searching','Monitorando...');
+    gpsWatchId = navigator.geolocation.watchPosition(pos=>{
+        updateLiveDisplay(pos);
+        updatePrecisionLockBar(pos.coords.accuracy);
+    }, err=>{
+        document.getElementById('accTip').textContent='Erro: '+err.message;
+    }, {enableHighAccuracy:true, timeout:5000, maximumAge:0});
+}
+
+function stopGPSMonitoring() {
+    isMonitoring=false;
+    if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}
+    document.getElementById('startMonBtn').style.display='block';
+    document.getElementById('gpsMonitor').style.display='none';
+    showGPSStatus('active','GPS Ativo');
+    updatePrecisionLockBar(null);
+}
+
+function updateLiveDisplay(position) {
     const{accuracy,latitude:lat,longitude:lng}=position.coords;
     const monitor=document.getElementById('gpsMonitor');
     document.getElementById('liveAccuracy').textContent=accuracy.toFixed(1);
@@ -944,67 +1303,131 @@ function updateLiveDisplay(position){
     else document.getElementById('liveUtmRow').style.display='none';
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  PRECISION LOCK
+// ═══════════════════════════════════════════════════
+function updatePrecisionLockBar(accuracy) {
+    lastGPSAccuracy = accuracy;
+    const bar = document.getElementById('precisionLockBar');
+    const status = document.getElementById('plbStatus');
+    const btn = document.getElementById('btnCapture');
+    if (accuracy === null) {
+        bar.className = 'precision-lock-bar no-gps';
+        bar.querySelector('.plb-icon').className = 'fas fa-lock-open plb-icon';
+        status.textContent = 'Inicie o monitoramento GPS';
+        btn.disabled = false; // permite captura manual sem monitoramento
+        return;
+    }
+    if (accuracy <= precisionLimit) {
+        bar.className = 'precision-lock-bar locked';
+        bar.querySelector('.plb-icon').className = 'fas fa-lock plb-icon';
+        status.innerHTML = `<span class="plb-val">±${accuracy.toFixed(1)}m</span> ≤ ${precisionLimit}m <span style="opacity:0.7">✓ Pronto</span>`;
+        btn.disabled = false;
+    } else {
+        bar.className = 'precision-lock-bar waiting';
+        bar.querySelector('.plb-icon').className = 'fas fa-lock-open plb-icon';
+        status.innerHTML = `<span class="plb-val">±${accuracy.toFixed(1)}m</span> — aguardando ≤ ${precisionLimit}m`;
+        btn.disabled = true;
+    }
+}
+
+function openPrecisionSettings() {
+    document.getElementById('precisionLimitInput').value = precisionLimit;
+    document.getElementById('precisionModal').classList.add('open');
+}
+function closePrecisionModal() { document.getElementById('precisionModal').classList.remove('open'); }
+async function savePrecisionLimit() {
+    const v = parseFloat(document.getElementById('precisionLimitInput').value);
+    if (!v || v < 1) { showToast('Valor inválido','error'); return; }
+    precisionLimit = v;
+    try { await dbPut('settings', {key:'precisionLimit', value:v}); } catch(e) {}
+    updatePrecisionLockBar(lastGPSAccuracy);
+    closePrecisionModal();
+    showToast(`Trava: ±${v}m`, 'success');
+}
+
+// ═══════════════════════════════════════════════════
 //  COORD SYSTEM
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function setCoordSystem(sys){coordSystem=sys;updateCoordUI();renderAll();showToast(sys==='geographic'?'Sistema: Geográficas':`Sistema: UTM Zona ${utmZone}S`,'info');}
 function updateCoordUI(){
     const isUtm=coordSystem==='utm';
-    document.getElementById('optGeo').classList.toggle('active',!isUtm);document.getElementById('optUtm').classList.toggle('active',isUtm);
-    document.getElementById('optGeo').querySelector('i').style.color=isUtm?'var(--muted)':'var(--primary)';document.getElementById('optUtm').querySelector('i').style.color=isUtm?'var(--primary)':'var(--muted)';
+    document.getElementById('optGeo').classList.toggle('active',!isUtm);
+    document.getElementById('optUtm').classList.toggle('active',isUtm);
+    document.getElementById('optGeo').querySelector('i').style.color=isUtm?'var(--muted)':'var(--primary)';
+    document.getElementById('optUtm').querySelector('i').style.color=isUtm?'var(--primary)':'var(--muted)';
     document.getElementById('utmZoneWrap').style.display=isUtm?'block':'none';
-    const zb=document.getElementById('zoneBadge');if(isUtm){zb.style.display='inline-flex';zb.textContent=`Zona ${utmZone}S`;}else zb.style.display='none';
+    const zb=document.getElementById('zoneBadge');
+    if(isUtm){zb.style.display='inline-flex';zb.textContent=`Zona ${utmZone}S`;}else zb.style.display='none';
 }
 function updateUTMZone(){utmZone=parseInt(document.getElementById('utmZoneSelect').value);document.getElementById('zoneBadge').textContent=`Zona ${utmZone}S`;renderAll();showToast(`Zona UTM: ${utmZone}S`,'info');}
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  CAPTURE
-// ═══════════════════════════════════════════════════════
-function captureLocation(){
+// ═══════════════════════════════════════════════════
+function captureLocation() {
     showGPSStatus('searching','Obtendo...');
-    const btn=document.getElementById('btnCapture');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Obtendo...';
+    const btn=document.getElementById('btnCapture');
+    btn.disabled=true;
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Obtendo...';
     navigator.geolocation.getCurrentPosition(pos=>{
         const{latitude:lat,longitude:lng,accuracy,altitude}=pos.coords;
         const utm=toUTM(lat,lng,utmZone);
-        const point={id:Date.now(),lat,lng,utmX:utm?.x||null,utmY:utm?.y||null,utmZone,accuracy,altitude,timestamp:new Date().toISOString(),name:`Ponto ${points.length+1}`,category:'other',description:'',
-            especie:'',usoSolo:'',dap:'',altura:'',fitossanidade:'',sessionId:currentSessionId};
-        points.unshift(point);savePoints();renderAll();updateMainMap();showGPSStatus('active','GPS Ativo');
-        btn.disabled=false;btn.innerHTML='<i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização';
+        const point={id:Date.now(),lat,lng,utmX:utm?.x||null,utmY:utm?.y||null,utmZone,accuracy,altitude,
+            timestamp:new Date().toISOString(),name:`Ponto ${points.length+1}`,category:'other',description:'',
+            especie:'',usoSolo:'',dap:'',altura:'',fitossanidade:'',sessionId:currentSessionId,photos:[]};
+        points.unshift(point);
+        savePoints();renderAll();updateMainMap();
+        showGPSStatus('active','GPS Ativo');
+        btn.disabled=false;
+        btn.innerHTML='<i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização';
+        if(lastGPSAccuracy!==null) updatePrecisionLockBar(accuracy);
         showToast('Localização capturada'+(accuracy<5?' (Excelente!)':accuracy<10?' (Boa)':''),'success');
-    },err=>{showGPSStatus('inactive','Erro');btn.disabled=false;btn.innerHTML='<i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização';showToast('Erro: '+err.message,'error');},{enableHighAccuracy:true,timeout:10000,maximumAge:0});
+    },err=>{
+        showGPSStatus('inactive','Erro');
+        btn.disabled=false;
+        btn.innerHTML='<i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização';
+        showToast('Erro: '+err.message,'error');
+    },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
 }
 
-function startTracking(){
+function startTracking() {
     if(isTracking){stopTracking();return;}
-    const btn=document.getElementById('btnTrack');btn.innerHTML='<i class="fas fa-stop" style="color:var(--danger)"></i> Parar';btn.style.background='rgba(255,180,171,0.1)';btn.style.borderColor='rgba(255,180,171,0.3)';
+    const btn=document.getElementById('btnTrack');
+    btn.innerHTML='<i class="fas fa-stop" style="color:var(--danger)"></i> Parar';
+    btn.style.background='rgba(255,180,171,0.1)';btn.style.borderColor='rgba(255,180,171,0.3)';
     isTracking=true;showGPSStatus('searching','Rastreando...');
     watchId=navigator.geolocation.watchPosition(pos=>{
-        const{latitude:lat,longitude:lng,accuracy,altitude}=pos.coords;const utm=toUTM(lat,lng,utmZone);
-        points.unshift({id:Date.now(),lat,lng,utmX:utm?.x||null,utmY:utm?.y||null,utmZone,accuracy,altitude,timestamp:new Date().toISOString(),name:`Track ${points.length+1}`,category:'other',description:'Auto',
-            especie:'',usoSolo:'',dap:'',altura:'',fitossanidade:'',sessionId:currentSessionId});
-        savePoints();renderAll();updateMainMap();document.getElementById('currentAccuracy').textContent=Math.round(accuracy)+'m';
+        const{latitude:lat,longitude:lng,accuracy,altitude}=pos.coords;
+        const utm=toUTM(lat,lng,utmZone);
+        const pt={id:Date.now(),lat,lng,utmX:utm?.x||null,utmY:utm?.y||null,utmZone,accuracy,altitude,
+            timestamp:new Date().toISOString(),name:`Track ${points.length+1}`,category:'other',description:'Auto',
+            especie:'',usoSolo:'',dap:'',altura:'',fitossanidade:'',sessionId:currentSessionId,photos:[]};
+        points.unshift(pt);
+        savePoints();renderAll();updateMainMap();
+        document.getElementById('currentAccuracy').textContent=Math.round(accuracy)+'m';
     },err=>showToast('Erro rastreamento: '+err.message,'error'),{enableHighAccuracy:true,maximumAge:10000});
 }
 function stopTracking(){if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}isTracking=false;const btn=document.getElementById('btnTrack');btn.innerHTML='<i class="fas fa-play" style="color:var(--accent)"></i> Rastrear';btn.style.background='';btn.style.borderColor='';showGPSStatus('active','GPS Ativo');}
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  STATS / COORDS / UTM
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function updateStats(){
     document.getElementById('countPoints').textContent=points.length;
     if(points.length>0){const last=points[0];document.getElementById('currentAccuracy').textContent=Math.round(last.accuracy)+'m';document.getElementById('lastUpdate').textContent=new Date(last.timestamp).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
     else{document.getElementById('currentAccuracy').textContent='--';document.getElementById('lastUpdate').textContent='--:--';}
 }
 function formatCoords(point){
-    if(coordSystem==='geographic') return{main:`${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`,label:'Lat/Long'};
-    if(point.utmX&&point.utmY) return{main:`${Math.round(point.utmX)}E, ${Math.round(point.utmY)}N`,label:`Zona ${point.utmZone||utmZone}S`};
+    if(coordSystem==='geographic')return{main:`${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`,label:'Lat/Long'};
+    if(point.utmX&&point.utmY)return{main:`${Math.round(point.utmX)}E, ${Math.round(point.utmY)}N`,label:`Zona ${point.utmZone||utmZone}S`};
     const utm=toUTM(point.lat,point.lng,utmZone);return{main:utm?`${Math.round(utm.x)}E, ${Math.round(utm.y)}N`:'Erro',label:`Zona ${utmZone}S`};
 }
 function toUTM(lat,lon,zone){try{const r=proj4(wgs84,utmProjections[zone],[lon,lat]);return{x:r[0],y:r[1]};}catch(e){return null;}}
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  RENDER POINTS LIST
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function renderPoints(){
     const c=document.getElementById('pointsList');
     if(points.length===0){c.innerHTML='<div class="empty-state"><i class="fas fa-map-marked-alt"></i><p>Nenhum ponto coletado</p><small>Capture pontos na aba Capturar</small></div>';return;}
@@ -1017,10 +1440,12 @@ function renderPoints(){
         const coords=formatCoords(p);
         const time=new Date(p.timestamp).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
         const extraAttrs=[];
-        if(p.especie) extraAttrs.push(`<span class="badge badge-teal" style="font-size:10px">${p.especie}</span>`);
-        if(p.usoSolo) extraAttrs.push(`<span class="badge badge-blue" style="font-size:10px">${usoLabel[p.usoSolo]||p.usoSolo}</span>`);
-        if(p.dap) extraAttrs.push(`<span style="font-size:10px;color:var(--warn);font-weight:600">DAP:${p.dap}cm</span>`);
-        if(p.altura) extraAttrs.push(`<span style="font-size:10px;color:var(--tertiary);font-weight:600">H:${p.altura}m</span>`);
+        if(p.especie)extraAttrs.push(`<span class="badge badge-teal" style="font-size:10px">${p.especie}</span>`);
+        if(p.usoSolo)extraAttrs.push(`<span class="badge badge-blue" style="font-size:10px">${usoLabel[p.usoSolo]||p.usoSolo}</span>`);
+        if(p.dap)extraAttrs.push(`<span style="font-size:10px;color:var(--warn);font-weight:600">DAP:${p.dap}cm</span>`);
+        if(p.altura)extraAttrs.push(`<span style="font-size:10px;color:var(--tertiary);font-weight:600">H:${p.altura}m</span>`);
+        const photoCount=(p.photos||[]).length;
+        const photoTag=photoCount>0?`<span class="has-photo-indicator"><i class="fas fa-camera"></i>${photoCount}</span>`:'';
         return `<div class="point-item" onclick="focusPoint(${p.lat},${p.lng})">
             <div class="point-num">${i+1}</div>
             <div class="point-info">
@@ -1030,6 +1455,7 @@ function renderPoints(){
                     <span class="badge ${catClass[p.category]}">${catLabel[p.category]}</span>
                     <span style="font-size:11px;color:${accColor(p.accuracy)};font-weight:600">±${Math.round(p.accuracy)}m</span>
                     <span style="font-size:11px;color:var(--muted);font-weight:500">${time}</span>
+                    ${photoTag}
                 </div>
                 ${extraAttrs.length?`<div class="point-meta" style="margin-top:4px">${extraAttrs.join('')}</div>`:''}
             </div>
@@ -1041,23 +1467,223 @@ function renderPoints(){
     }).join('');
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  MAPS
-// ═══════════════════════════════════════════════════════
-function initMap(){map=L.map('map',{zoomControl:false,attributionControl:false}).setView([-11.7286,-49.0686],13);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);L.control.zoom({position:'bottomright'}).addTo(map);}
-function initAreaMap(){mapArea=L.map('mapArea',{zoomControl:false,attributionControl:false}).setView([-11.7286,-49.0686],13);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(mapArea);L.control.zoom({position:'bottomright'}).addTo(mapArea);updateAreaMap();}
+// ═══════════════════════════════════════════════════
+function initMap(){
+    map=L.map('map',{zoomControl:false,attributionControl:false}).setView([-11.7286,-49.0686],13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+    L.control.zoom({position:'bottomright'}).addTo(map);
+}
+function initAreaMap(){
+    mapArea=L.map('mapArea',{zoomControl:false,attributionControl:false}).setView([-11.7286,-49.0686],13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(mapArea);
+    L.control.zoom({position:'bottomright'}).addTo(mapArea);
+    updateAreaMap();
+}
 function updateMainMap(){
-    if(!map)return;markers.forEach(m=>map.removeLayer(m));markers=[];if(points.length===0)return;
+    if(!map)return;
+    markers.forEach(m=>map.removeLayer(m));markers=[];
+    // camada importada
+    if(importedLayer){try{importedLayer.addTo(map);}catch(e){}}
+    if(points.length===0)return;
     const group=L.featureGroup();
-    points.forEach((p,i)=>{const m=L.circleMarker([p.lat,p.lng],{radius:8,fillColor:i===0?'#82D8C8':'#A9C7FF',color:'rgba(255,255,255,0.3)',weight:2,fillOpacity:0.9}).addTo(map);const coords=formatCoords(p);m.bindPopup(`<b style="color:#1e293b">${p.name}</b><br><small style="color:#475569">${coords.main}</small>`);markers.push(m);group.addLayer(m);});
+    points.forEach((p,i)=>{
+        const m=L.circleMarker([p.lat,p.lng],{radius:8,fillColor:i===0?'#82D8C8':'#A9C7FF',color:'rgba(255,255,255,0.3)',weight:2,fillOpacity:0.9}).addTo(map);
+        const coords=formatCoords(p);
+        m.bindPopup(`<b style="color:#1e293b">${p.name}</b><br><small style="color:#475569">${coords.main}</small>`);
+        markers.push(m);group.addLayer(m);
+    });
     map.fitBounds(group.getBounds().pad(0.1));
 }
 function centerMap(){if(markers.length===0)return;map.fitBounds(L.featureGroup(markers).getBounds().pad(0.1));}
 function focusPoint(lat,lng){switchTab('map');setTimeout(()=>{if(map)map.setView([lat,lng],16);},150);}
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  IMPORT KML / GEOJSON
+// ═══════════════════════════════════════════════════
+function handleImportDrop(e) {
+    e.preventDefault();
+    document.getElementById('importDropZone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) processImportFile(file);
+}
+function handleImportFile(input) {
+    const file = input.files[0];
+    if (file) processImportFile(file);
+    input.value = '';
+}
+function processImportFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        const text = e.target.result;
+        const ext  = file.name.split('.').pop().toLowerCase();
+        try {
+            let geojson;
+            if (ext === 'kml') {
+                geojson = kmlToGeoJSON(text);
+            } else {
+                geojson = JSON.parse(text);
+            }
+            if (!geojson || !geojson.type) throw new Error('GeoJSON inválido');
+            addImportedLayer(geojson, file.name, ext);
+        } catch(err) {
+            showToast('Erro ao importar arquivo','error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+function kmlToGeoJSON(kmlText) {
+    const parser = new DOMParser();
+    const kml = parser.parseFromString(kmlText, 'text/xml');
+    const features = [];
+    // Polígonos
+    kml.querySelectorAll('Polygon').forEach(poly => {
+        const coordsStr = poly.querySelector('coordinates')?.textContent?.trim() || '';
+        const coords = coordsStr.split(/\s+/).filter(Boolean).map(c => {
+            const parts = c.split(','); return [parseFloat(parts[0]), parseFloat(parts[1])];
+        });
+        if (coords.length > 2) {
+            const name = poly.closest('Placemark')?.querySelector('name')?.textContent || 'Polígono';
+            features.push({type:'Feature',properties:{name},geometry:{type:'Polygon',coordinates:[coords]}});
+        }
+    });
+    // Linhas
+    kml.querySelectorAll('LineString').forEach(line => {
+        const coordsStr = line.querySelector('coordinates')?.textContent?.trim() || '';
+        const coords = coordsStr.split(/\s+/).filter(Boolean).map(c => {
+            const parts = c.split(','); return [parseFloat(parts[0]), parseFloat(parts[1])];
+        });
+        if (coords.length > 1) {
+            const name = line.closest('Placemark')?.querySelector('name')?.textContent || 'Linha';
+            features.push({type:'Feature',properties:{name},geometry:{type:'LineString',coordinates:coords}});
+        }
+    });
+    // Pontos
+    kml.querySelectorAll('Point').forEach(pt => {
+        const coordsStr = pt.querySelector('coordinates')?.textContent?.trim() || '';
+        const parts = coordsStr.split(',');
+        if (parts.length >= 2) {
+            const name = pt.closest('Placemark')?.querySelector('name')?.textContent || 'Ponto';
+            features.push({type:'Feature',properties:{name},geometry:{type:'Point',coordinates:[parseFloat(parts[0]),parseFloat(parts[1])]}});
+        }
+    });
+    return {type:'FeatureCollection', features};
+}
+
+function addImportedLayer(geojson, filename, ext) {
+    if (!map) initMap();
+    if (importedLayer) { try{map.removeLayer(importedLayer);}catch(e){} }
+    importedLayer = L.geoJSON(geojson, {
+        style: { color:'#E65100', weight:2.5, fillOpacity:0.08, opacity:0.85 },
+        pointToLayer: (f,ll) => L.circleMarker(ll, {radius:6,fillColor:'#E65100',color:'#fff',weight:1.5,fillOpacity:0.9}),
+        onEachFeature: (f, l) => { if(f.properties?.name) l.bindPopup(`<b>${f.properties.name}</b>`); }
+    });
+    if (currentTab === 'map') { importedLayer.addTo(map); }
+
+    // UI info
+    const fCount = geojson.features ? geojson.features.length : 0;
+    document.getElementById('importLayerInfo').style.display = 'block';
+    document.getElementById('importLayerName').textContent = filename;
+    document.getElementById('importLayerMeta').textContent = `${fCount} feições · ${ext.toUpperCase()}`;
+
+    if (currentTab === 'map' && geojson.features?.length > 0) {
+        setTimeout(()=>{ try{map.fitBounds(importedLayer.getBounds().pad(0.1));}catch(e){} }, 200);
+    }
+    showToast(`Camada importada: ${fCount} feições`, 'success');
+}
+
+function removeImportedLayer() {
+    if (importedLayer) { try{map.removeLayer(importedLayer);}catch(e){} importedLayer=null; }
+    document.getElementById('importLayerInfo').style.display = 'none';
+    showToast('Camada removida','info');
+}
+
+// ═══════════════════════════════════════════════════
+//  PHOTOS
+// ═══════════════════════════════════════════════════
+function triggerPhotoCapture() {
+    document.getElementById('photoCaptureInput').click();
+}
+
+function handlePhotoCapture(input) {
+    const file = input.files[0];
+    if (!file || !currentEditId) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const p = points.find(p => p.id === currentEditId);
+        if (!p) return;
+        if (!p.photos) p.photos = [];
+        p.photos.push({
+            id: Date.now(),
+            data: e.target.result,
+            timestamp: new Date().toISOString(),
+            filename: file.name
+        });
+        savePoints();
+        renderEditPhotos(p);
+        showToast('Foto adicionada!','success');
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+}
+
+function renderEditPhotos(point) {
+    const strip = document.getElementById('editPhotoStrip');
+    const photos = point.photos || [];
+    strip.innerHTML = '';
+    photos.forEach((ph, idx) => {
+        const img = document.createElement('img');
+        img.src = ph.data;
+        img.className = 'photo-thumb';
+        img.onclick = () => openPhotoModal(point.id, idx);
+        strip.appendChild(img);
+    });
+    const addBtn = document.createElement('div');
+    addBtn.className = 'photo-add-btn';
+    addBtn.innerHTML = '<i class="fas fa-camera"></i>';
+    addBtn.onclick = triggerPhotoCapture;
+    strip.appendChild(addBtn);
+}
+
+function openPhotoModal(pointId, photoIdx) {
+    const p = points.find(p => p.id === pointId);
+    if (!p || !p.photos || !p.photos[photoIdx]) return;
+    currentPhotoPointId = pointId;
+    currentViewPhotoIdx = photoIdx;
+    const ph = p.photos[photoIdx];
+    document.getElementById('photoModalImg').src = ph.data;
+    document.getElementById('photoModalTitle').textContent = `Foto ${photoIdx+1} de ${p.photos.length}`;
+    document.getElementById('photoModalMeta').textContent = `${p.name} · ${new Date(ph.timestamp).toLocaleString('pt-BR')}`;
+    document.getElementById('photoModal').classList.add('open');
+}
+function closePhotoModal() { document.getElementById('photoModal').classList.remove('open'); }
+
+function downloadCurrentPhoto() {
+    const p = points.find(pt => pt.id === currentPhotoPointId);
+    if (!p || currentViewPhotoIdx === null) return;
+    const ph = p.photos[currentViewPhotoIdx];
+    const a = document.createElement('a');
+    a.href = ph.data;
+    a.download = `foto-${p.name.replace(/\s+/g,'-')}-${currentViewPhotoIdx+1}.jpg`;
+    a.click();
+}
+
+function deleteCurrentPhoto() {
+    const p = points.find(pt => pt.id === currentPhotoPointId);
+    if (!p || currentViewPhotoIdx === null) return;
+    if (!confirm('Excluir esta foto?')) return;
+    p.photos.splice(currentViewPhotoIdx, 1);
+    savePoints();
+    closePhotoModal();
+    renderEditPhotos(p);
+    showToast('Foto excluída','info');
+}
+
+// ═══════════════════════════════════════════════════
 //  AREA TAB
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function renderAreaPointsList(){
     const c=document.getElementById('areaPointsList');
     if(points.length===0){c.innerHTML='<div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum ponto disponível</p><small>Colete pontos na aba Capturar</small></div>';return;}
@@ -1091,7 +1717,9 @@ function calculateArea(){
     let area=0,perimeter=0;const n=valid.length;
     for(let i=0;i<n;i++){const cur=valid[i],nxt=valid[(i+1)%n];area+=cur.utmX*nxt.utmY-nxt.utmX*cur.utmY;const dx=nxt.utmX-cur.utmX,dy=nxt.utmY-cur.utmY;perimeter+=Math.sqrt(dx*dx+dy*dy);}
     area=Math.abs(area)/2;const areaHa=area/10000;
-    lastCalculatedArea={area_m2:area,area_ha:areaHa,perimeter,vertices:n,zone:zones[0],points:valid};areasCalcCount++;
+    lastCalculatedArea={area_m2:area,area_ha:areaHa,perimeter,vertices:n,zone:zones[0],points:valid};
+    areasCalcCount++;
+    try{dbPut('settings',{key:'areasCalcCount',value:areasCalcCount});}catch(e){}
     document.getElementById('areaHa').textContent=areaHa.toLocaleString('pt-BR',{maximumFractionDigits:4});
     document.getElementById('areaM2Sub').textContent=area.toLocaleString('pt-BR',{maximumFractionDigits:2})+' m²';
     document.getElementById('areaM2').textContent=area.toLocaleString('pt-BR',{maximumFractionDigits:2})+' m²';
@@ -1101,67 +1729,212 @@ function calculateArea(){
     document.getElementById('areaResults').scrollIntoView({behavior:'smooth',block:'nearest'});showToast(`Área: ${areaHa.toFixed(4)} ha`,'success');
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════
+function updateDashboard() {
+    const n = points.length;
+    document.getElementById('dashPontos').textContent = n;
+    if (n === 0) {
+        document.getElementById('dashPrecisao').textContent='--';
+        document.getElementById('dashEspecies').textContent='0';
+        document.getElementById('dashDAP').textContent='--';
+        document.getElementById('dashFotos').textContent='0';
+        document.getElementById('dashAltura').textContent='--';
+        renderBarChart('chartEspecies',[],{color:'var(--primary)'});
+        renderBarChart('chartUsoSolo',[],{color:'var(--tertiary)'});
+        renderBarChart('chartDAP',[],{color:'var(--warn)'});
+        renderGPSQualityChart();
+        return;
+    }
+    // KPIs
+    const avgAcc = (points.reduce((a,p)=>a+p.accuracy,0)/n).toFixed(1);
+    document.getElementById('dashPrecisao').textContent = `±${avgAcc}m`;
+
+    const especiesSet = new Set(points.map(p=>p.especie).filter(Boolean));
+    document.getElementById('dashEspecies').textContent = especiesSet.size;
+
+    const daps = points.map(p=>parseFloat(p.dap)).filter(v=>!isNaN(v));
+    document.getElementById('dashDAP').textContent = daps.length ? (daps.reduce((a,b)=>a+b,0)/daps.length).toFixed(1) : '--';
+
+    const alts = points.map(p=>parseFloat(p.altura)).filter(v=>!isNaN(v));
+    document.getElementById('dashAltura').textContent = alts.length ? (alts.reduce((a,b)=>a+b,0)/alts.length).toFixed(1) : '--';
+
+    const totalPhotos = points.reduce((a,p)=>a+(p.photos||[]).length,0);
+    document.getElementById('dashFotos').textContent = totalPhotos;
+
+    // Gráficos
+    const especiesCounts = countBy(points, p => p.especie || null);
+    const usoSoloCounts  = countBy(points, p => p.usoSolo || null);
+
+    const usoLabels = {'floresta_nativa':'F.Nativa','floresta_plantada':'F.Plantada','pastagem':'Pastagem','lavoura':'Lavoura','cerrado':'Cerrado','app':'APP','reserva_legal':'Res.Legal','area_degradada':'Degradada','urbano':'Urbano','agua':'Água','outro':'Outro'};
+    const usoMapped = Object.entries(usoSoloCounts).map(([k,v])=>({label:usoLabels[k]||k, count:v}));
+
+    renderBarChart('chartEspecies', Object.entries(especiesCounts).map(([k,v])=>({label:k,count:v})), {color:'var(--primary)'});
+    renderBarChart('chartUsoSolo',  usoMapped, {color:'var(--tertiary)'});
+
+    // DAP em classes
+    const dapClasses = {'<10cm':0,'10–20cm':0,'20–30cm':0,'30–50cm':0,'>50cm':0};
+    daps.forEach(v => {
+        if(v<10) dapClasses['<10cm']++;
+        else if(v<20) dapClasses['10–20cm']++;
+        else if(v<30) dapClasses['20–30cm']++;
+        else if(v<50) dapClasses['30–50cm']++;
+        else dapClasses['>50cm']++;
+    });
+    renderBarChart('chartDAP', Object.entries(dapClasses).filter(([,v])=>v>0).map(([k,v])=>({label:k,count:v})), {color:'var(--warn)'});
+    renderGPSQualityChart();
+}
+
+function countBy(arr, fn) {
+    const result = {};
+    arr.forEach(item => {
+        const key = fn(item);
+        if (!key) return;
+        result[key] = (result[key] || 0) + 1;
+    });
+    return result;
+}
+
+function renderBarChart(containerId, data, opts={}) {
+    const c = document.getElementById(containerId);
+    if (!data.length) {
+        c.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Sem dados</div>';
+        return;
+    }
+    data.sort((a,b)=>b.count-a.count);
+    const max = data[0].count;
+    const color = opts.color || 'var(--primary)';
+    c.innerHTML = data.map(d => {
+        const pct = Math.round((d.count/max)*100);
+        return `<div class="bar-row">
+            <div class="bar-label" title="${d.label}">${d.label}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <div class="bar-count">${d.count}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderGPSQualityChart() {
+    const buckets = {Excelente:0, Boa:0, Média:0, Ruim:0};
+    points.forEach(p => {
+        if(p.accuracy<3) buckets.Excelente++;
+        else if(p.accuracy<6) buckets.Boa++;
+        else if(p.accuracy<15) buckets.Média++;
+        else buckets.Ruim++;
+    });
+    const data = Object.entries(buckets).filter(([,v])=>v>0).map(([k,v])=>({label:k,count:v}));
+    const colors = {Excelente:'var(--primary)',Boa:'var(--accent)',Média:'var(--warn)',Ruim:'var(--danger)'};
+    const c = document.getElementById('chartGPS');
+    if (!data.length){c.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">Sem dados</div>';return;}
+    const max = Math.max(...data.map(d=>d.count));
+    c.innerHTML = data.map(d => {
+        const pct = Math.round((d.count/max)*100);
+        return `<div class="bar-row">
+            <div class="bar-label">${d.label}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[d.label]||'var(--primary)'}"></div></div>
+            <div class="bar-count">${d.count}</div>
+        </div>`;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════
 //  EDIT / DELETE
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function editPoint(id){
-    const p=points.find(p=>p.id===id);if(!p)return;currentEditId=id;
-    document.getElementById('editName').value=p.name;document.getElementById('editCategory').value=p.category;document.getElementById('editDesc').value=p.description||'';
-    document.getElementById('editEspecie').value=p.especie||'';document.getElementById('editUsoSolo').value=p.usoSolo||'';
-    document.getElementById('editDAP').value=p.dap||'';document.getElementById('editAltura').value=p.altura||'';document.getElementById('editFito').value=p.fitossanidade||'';
+    const p=points.find(p=>p.id===id);if(!p)return;
+    currentEditId=id;
+    document.getElementById('editName').value=p.name;
+    document.getElementById('editCategory').value=p.category;
+    document.getElementById('editDesc').value=p.description||'';
+    document.getElementById('editEspecie').value=p.especie||'';
+    document.getElementById('editUsoSolo').value=p.usoSolo||'';
+    document.getElementById('editDAP').value=p.dap||'';
+    document.getElementById('editAltura').value=p.altura||'';
+    document.getElementById('editFito').value=p.fitossanidade||'';
+    renderEditPhotos(p);
     document.getElementById('editModal').classList.add('open');
 }
 function closeModal(){document.getElementById('editModal').classList.remove('open');currentEditId=null;}
 function handleModalClick(e){if(e.target===e.currentTarget)closeModal();}
 function saveEdit(){
-    if(!currentEditId)return;const p=points.find(p=>p.id===currentEditId);
+    if(!currentEditId)return;
+    const p=points.find(p=>p.id===currentEditId);
     if(p){
-        p.name=document.getElementById('editName').value||p.name;p.category=document.getElementById('editCategory').value;p.description=document.getElementById('editDesc').value;
-        p.especie=document.getElementById('editEspecie').value;p.usoSolo=document.getElementById('editUsoSolo').value;
-        p.dap=document.getElementById('editDAP').value;p.altura=document.getElementById('editAltura').value;p.fitossanidade=document.getElementById('editFito').value;
+        p.name=document.getElementById('editName').value||p.name;
+        p.category=document.getElementById('editCategory').value;
+        p.description=document.getElementById('editDesc').value;
+        p.especie=document.getElementById('editEspecie').value;
+        p.usoSolo=document.getElementById('editUsoSolo').value;
+        p.dap=document.getElementById('editDAP').value;
+        p.altura=document.getElementById('editAltura').value;
+        p.fitossanidade=document.getElementById('editFito').value;
         savePoints();renderAll();showToast('Ponto atualizado!','success');
     }
     closeModal();
 }
-function deletePoint(id){if(!confirm('Excluir este ponto?'))return;points=points.filter(p=>p.id!==id);selectedPoints=selectedPoints.filter(p=>p.id!==id);savePoints();renderAll();updateMainMap();updateAreaMap();showToast('Ponto removido','info');}
-function clearAllPoints(){if(points.length===0)return;if(!confirm(`Excluir todos os ${points.length} pontos?`))return;points=[];selectedPoints=[];savePoints();renderAll();updateMainMap();updateAreaMap();showToast('Todos os pontos removidos','info');}
+function deletePoint(id){
+    if(!confirm('Excluir este ponto?'))return;
+    points=points.filter(p=>p.id!==id);
+    deletePointFromDB(id);
+    selectedPoints=selectedPoints.filter(p=>p.id!==id);
+    savePoints();renderAll();updateMainMap();updateAreaMap();showToast('Ponto removido','info');
+}
+function clearAllPoints(){
+    if(points.length===0)return;
+    if(!confirm(`Excluir todos os ${points.length} pontos?`))return;
+    const ids=points.map(p=>p.id);
+    points=[];selectedPoints=[];
+    ids.forEach(id=>deletePointFromDB(id));
+    savePoints();renderAll();updateMainMap();updateAreaMap();showToast('Todos os pontos removidos','info');
+}
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  SESSIONS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function updateSessionDisplay(){
     document.getElementById('currentSessionName').textContent=currentSessionName;
     document.getElementById('sessionNameDisplay').textContent=currentSessionName;
     document.getElementById('currentSessionMeta').textContent=`${points.length} pontos · ${new Date().toLocaleDateString('pt-BR')}`;
 }
-function saveSession(){
+async function saveSession(){
     if(points.length===0){showToast('Nenhum ponto para salvar','error');return;}
     const existing=sessions.findIndex(s=>s.id===currentSessionId);
     const sessionData={id:currentSessionId,name:currentSessionName,points:[...points],savedAt:new Date().toISOString(),pointCount:points.length,areaCount:areasCalcCount};
     if(existing>=0)sessions[existing]=sessionData;else sessions.unshift(sessionData);
-    localStorage.setItem('geoSessions',JSON.stringify(sessions));updateBadges();renderSessionsList();showToast(`Sessão "${currentSessionName}" salva!`,'success');
+    await saveSessions();
+    updateBadges();renderSessionsList();showToast(`Sessão "${currentSessionName}" salva!`,'success');
 }
-function newSession(){
+async function newSession(){
     if(points.length>0&&!confirm('Iniciar nova sessão? Os pontos atuais serão mantidos na sessão salva.'))return;
-    saveSession();
-    currentSessionId=Date.now().toString();currentSessionName='Sessão '+new Date().toLocaleDateString('pt-BR')+' #'+sessions.length;
+    await saveSession();
+    currentSessionId=Date.now().toString();
+    currentSessionName='Sessão '+new Date().toLocaleDateString('pt-BR')+' #'+sessions.length;
     points=[];selectedPoints=[];lastCalculatedArea=null;areasCalcCount=0;
-    localStorage.setItem('currentSessionId',currentSessionId);localStorage.setItem('currentSessionName',currentSessionName);
-    savePoints();renderAll();updateMainMap();updateAreaMap();updateSessionDisplay();showToast('Nova sessão iniciada!','success');
+    try{await dbClear('points');}catch(e){}
+    await savePoints();
+    renderAll();updateMainMap();updateAreaMap();updateSessionDisplay();showToast('Nova sessão iniciada!','success');
 }
-function loadSession(id){
+async function loadSession(id){
     const s=sessions.find(s=>s.id===id);if(!s)return;
     if(!confirm(`Carregar "${s.name}"? Os pontos atuais não salvos serão perdidos.`))return;
     currentSessionId=s.id;currentSessionName=s.name;points=[...s.points];selectedPoints=[];lastCalculatedArea=null;areasCalcCount=s.areaCount||0;
-    localStorage.setItem('currentSessionId',currentSessionId);localStorage.setItem('currentSessionName',currentSessionName);
-    savePoints();renderAll();updateMainMap();if(mapArea)updateAreaMap();updateSessionDisplay();
+    // Sincroniza IndexedDB com pontos da sessão
+    try{
+        await dbClear('points');
+        for(const p of points)await dbPut('points',p);
+    }catch(e){}
+    await savePoints();
+    renderAll();updateMainMap();if(mapArea)updateAreaMap();updateSessionDisplay();
     switchTab('capture');showToast(`Sessão "${s.name}" carregada!`,'success');
 }
-function deleteSession(id){
+async function deleteSession(id){
     const s=sessions.find(s=>s.id===id);if(!s||!confirm(`Excluir sessão "${s.name}"?`))return;
-    sessions=sessions.filter(s=>s.id!==id);localStorage.setItem('geoSessions',JSON.stringify(sessions));updateBadges();renderSessionsList();showToast('Sessão excluída','info');
+    sessions=sessions.filter(s=>s.id!==id);
+    await saveSessions();
+    updateBadges();renderSessionsList();showToast('Sessão excluída','info');
 }
-function renameSession(){openSessionModal(name=>{currentSessionName=name;localStorage.setItem('currentSessionName',name);updateSessionDisplay();showToast('Sessão renomeada!','success');});}
+function renameSession(){openSessionModal(name=>{currentSessionName=name;savePoints();updateSessionDisplay();showToast('Sessão renomeada!','success');});}
 function openSessionModal(callback){sessionRenameCallback=callback;document.getElementById('sessionNameInput').value=currentSessionName;document.getElementById('sessionModal').classList.add('open');setTimeout(()=>document.getElementById('sessionNameInput').focus(),300);}
 function closeSessionModal(){document.getElementById('sessionModal').classList.remove('open');sessionRenameCallback=null;}
 function confirmSessionName(){const name=document.getElementById('sessionNameInput').value.trim();if(!name){showToast('Digite um nome','error');return;}if(sessionRenameCallback)sessionRenameCallback(name);closeSessionModal();}
@@ -1186,9 +1959,9 @@ function renderSessionsList(){
     updateSessionDisplay();
 }
 
-// ═══════════════════════════════════════════════════════
-//  SHARE — WhatsApp / Email
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  SHARE
+// ═══════════════════════════════════════════════════
 function buildPointsText(){
     if(points.length===0)return null;
     const lines=[];lines.push(`📍 *GeoCollector UFT — ${currentSessionName}*`);lines.push(`🗓 ${new Date().toLocaleString('pt-BR')}`);lines.push(`📊 ${points.length} pontos coletados\n`);
@@ -1210,26 +1983,14 @@ function buildAreaText(){
     const{area_ha,area_m2,perimeter,vertices,zone}=lastCalculatedArea;
     return `📐 *Cálculo de Área — GeoCollector UFT*\n🗓 ${new Date().toLocaleString('pt-BR')}\n\n*Resultado:*\n• Área: ${area_ha.toFixed(4)} ha\n• Área: ${area_m2.toFixed(2)} m²\n• Perímetro: ${perimeter.toFixed(2)} m\n• Vértices: ${vertices}\n• Zona UTM: ${zone}S (SIRGAS 2000)\n\n---\nUFT · Agronomia · Eng. Florestal · Gurupi`;
 }
-function shareWhatsApp(){
-    const text=buildPointsText();if(!text){showToast('Nenhum dado para compartilhar','error');return;}
-    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
-}
-function shareEmail(){
-    const text=buildPointsText();if(!text){showToast('Nenhum dado para compartilhar','error');return;}
-    const subject=encodeURIComponent(`GeoCollector UFT — ${currentSessionName}`);
-    const body=encodeURIComponent(text.replace(/\*/g,''));
-    window.location.href=`mailto:?subject=${subject}&body=${body}`;
-}
+function shareWhatsApp(){const text=buildPointsText();if(!text){showToast('Nenhum dado para compartilhar','error');return;}window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');}
+function shareEmail(){const text=buildPointsText();if(!text){showToast('Nenhum dado para compartilhar','error');return;}const subject=encodeURIComponent(`GeoCollector UFT — ${currentSessionName}`);const body=encodeURIComponent(text.replace(/\*/g,''));window.location.href=`mailto:?subject=${subject}&body=${body}`;}
 function sharePolygonWhatsApp(){const text=buildAreaText();if(!text){showToast('Calcule a área primeiro','error');return;}window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');}
-function sharePolygonEmail(){
-    const text=buildAreaText();if(!text){showToast('Calcule a área primeiro','error');return;}
-    const subject=encodeURIComponent('Cálculo de Área — GeoCollector UFT');
-    window.location.href=`mailto:?subject=${subject}&body=${encodeURIComponent(text.replace(/\*/g,''))}`;
-}
+function sharePolygonEmail(){const text=buildAreaText();if(!text){showToast('Calcule a área primeiro','error');return;}const subject=encodeURIComponent('Cálculo de Área — GeoCollector UFT');window.location.href=`mailto:?subject=${subject}&body=${encodeURIComponent(text.replace(/\*/g,''))}`;}
 
-// ═══════════════════════════════════════════════════════
-//  RELATÓRIO AUTOMÁTICO (HTML → Print → PDF)
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  REPORT
+// ═══════════════════════════════════════════════════
 function generateReport(){
     if(points.length===0){showToast('Nenhum ponto para o relatório','error');return;}
     const now=new Date().toLocaleString('pt-BR');
@@ -1244,27 +2005,24 @@ function generateReport(){
                 <div class="report-info-row"><span class="report-info-label">Zona UTM</span><span class="report-info-val">${lastCalculatedArea.zone}S (SIRGAS 2000)</span></div>
                 <div class="report-info-row"><span class="report-info-label">Método</span><span class="report-info-val">Fórmula de Gauss</span></div>
             </div>
-        </div>` : '<p style="color:#888;font-style:italic;font-size:12px">Nenhuma área calculada nesta sessão.</p>';
-
+        </div>`:'<p style="color:#888;font-style:italic;font-size:12px">Nenhuma área calculada nesta sessão.</p>';
     const hasAttrs=points.some(p=>p.especie||p.usoSolo||p.dap||p.altura||p.fitossanidade);
     const attrHeaders=hasAttrs?'<th>Espécie</th><th>Uso Solo</th><th>DAP(cm)</th><th>Alt(m)</th><th>Fitoss.</th>':'';
     const fitoLabel={otima:'Ótima',boa:'Boa',regular:'Regular',ruim:'Ruim/Doença',praga:'Praga',seca:'Seca',morta:'Morta'};
     const usoLabel={'floresta_nativa':'F.Nativa','floresta_plantada':'F.Plantada','pastagem':'Pastagem','lavoura':'Lavoura','cerrado':'Cerrado','app':'APP','reserva_legal':'Res.Legal','area_degradada':'Degradada','urbano':'Urbano','agua':'Água','outro':'Outro'};
-
     const rows=points.map((p,i)=>{
         const coords=p.utmX&&p.utmY?`${Math.round(p.utmX)} / ${Math.round(p.utmY)}`:`${p.lat.toFixed(6)} / ${p.lng.toFixed(6)}`;
         const attrCells=hasAttrs?`<td>${p.especie||'—'}</td><td>${p.usoSolo?(usoLabel[p.usoSolo]||p.usoSolo):'—'}</td><td>${p.dap||'—'}</td><td>${p.altura||'—'}</td><td>${p.fitossanidade?(fitoLabel[p.fitossanidade]||p.fitossanidade):'—'}</td>`:'';
-        return `<tr><td>${i+1}</td><td><strong>${p.name}</strong></td><td style="font-family:monospace;font-size:10px">${coords}</td><td>${p.utmX?`Zona ${p.utmZone||utmZone}S`:'Geog.'}</td><td>${Math.round(p.accuracy)}m</td><td>${new Date(p.timestamp).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>${attrCells}</tr>`;
+        const photoCount=(p.photos||[]).length;
+        return `<tr><td>${i+1}</td><td><strong>${p.name}</strong>${photoCount>0?` 📷${photoCount}`:''}</td><td style="font-family:monospace;font-size:10px">${coords}</td><td>${p.utmX?`Zona ${p.utmZone||utmZone}S`:'Geog.'}</td><td>${Math.round(p.accuracy)}m</td><td>${new Date(p.timestamp).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>${attrCells}</tr>`;
     }).join('');
-
     document.getElementById('reportContent').innerHTML=`
         <div class="report-header">
             <div class="report-logo">📍</div>
             <div class="report-title">GeoCollector UFT</div>
-            <div class="report-sub">Relatório Técnico de Campo</div>
+            <div class="report-sub">Relatório Técnico de Campo · v4.0</div>
             <div style="margin-top:6px;font-size:11px;color:#888">Gerado em: ${now}</div>
         </div>
-
         <div class="report-section">
             <div class="report-section-title">Identificação</div>
             <div class="report-info-grid">
@@ -1278,12 +2036,10 @@ function generateReport(){
                 <div class="report-info-row"><span class="report-info-label">Sistema de Coord.</span><span class="report-info-val">WGS84 / SIRGAS 2000</span></div>
             </div>
         </div>
-
         <div class="report-section">
             <div class="report-section-title">Resultado — Cálculo de Área</div>
             ${areaSection}
         </div>
-
         <div class="report-section">
             <div class="report-section-title">Pontos Coletados</div>
             <table class="report-table">
@@ -1291,108 +2047,221 @@ function generateReport(){
                 <tbody>${rows}</tbody>
             </table>
         </div>
-
         <div class="report-section">
             <div class="report-section-title">Metodologia</div>
-            <p style="font-size:12px;color:#333;line-height:1.6">Os pontos foram coletados com dispositivo GNSS via API de Geolocalização HTML5 (enableHighAccuracy). As coordenadas geográficas foram convertidas para o sistema UTM (SIRGAS 2000) utilizando a biblioteca Proj4js. O cálculo de área foi realizado pela Fórmula de Shoelace (Gauss) aplicada sobre as coordenadas UTM dos vértices.</p>
+            <p style="font-size:12px;color:#333;line-height:1.6">Os pontos foram coletados com dispositivo GNSS via API de Geolocalização HTML5 (enableHighAccuracy). As coordenadas geográficas foram convertidas para o sistema UTM (SIRGAS 2000) utilizando a biblioteca Proj4js. O cálculo de área foi realizado pela Fórmula de Shoelace (Gauss) aplicada sobre as coordenadas UTM dos vértices. Dados armazenados via IndexedDB. App com suporte offline (PWA).</p>
         </div>
-
-        <div class="sign-row">
-            <div class="sign-box">Professor Responsável<br><strong>Prof. Dsc. Jacinto Pereira Santos</strong></div>
-            <div class="sign-box">Aluno(a)<br><br></div>
+        <div class="report-section">
+            <div class="report-section-title">Assinatura</div>
+            <div class="sign-row">
+                <div class="sign-box">Professor Responsável<br><strong>Prof. Dsc. Jacinto Pereira Santos</strong></div>
+                <div class="sign-box">Aluno(a)<br><br></div>
+            </div>
         </div>
-
         <div class="report-footer" style="margin-top:20px">
-            <div>© 2026 Universidade Federal do Tocantins · GeoCollector UFT v3.0</div>
+            <div>© 2026 Universidade Federal do Tocantins · GeoCollector UFT v4.0</div>
             <div>Gerado em: ${now}</div>
         </div>`;
-
     showToast('Abrindo relatório para impressão...','info');
     setTimeout(()=>window.print(),400);
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  EXPORT
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function exportData(format){
     if(points.length===0){showToast('Nenhum dado para exportar','error');return;}
     const ts=new Date().toISOString().split('T')[0];let content,mime,fname;
     if(format==='geojson'){
-        const gj={type:'FeatureCollection',features:points.map(p=>({type:'Feature',properties:{name:p.name,category:p.category,description:p.description,accuracy:p.accuracy,timestamp:p.timestamp,institution:'UFT',course:'Agronomia/Eng.Florestal',discipline:'Sensoriamento Remoto e SIG',campus:'Gurupi',utm_x:p.utmX,utm_y:p.utmY,utm_zone:p.utmZone,especie:p.especie||'',uso_solo:p.usoSolo||'',dap_cm:p.dap||'',altura_m:p.altura||'',fitossanidade:p.fitossanidade||''},geometry:{type:'Point',coordinates:[p.lng,p.lat,p.altitude||0]}}))}
+        const gj={type:'FeatureCollection',features:points.map(p=>({type:'Feature',properties:{name:p.name,category:p.category,description:p.description,accuracy:p.accuracy,timestamp:p.timestamp,institution:'UFT',course:'Agronomia/Eng.Florestal',discipline:'Sensoriamento Remoto e SIG',campus:'Gurupi',utm_x:p.utmX,utm_y:p.utmY,utm_zone:p.utmZone,especie:p.especie||'',uso_solo:p.usoSolo||'',dap_cm:p.dap||'',altura_m:p.altura||'',fitossanidade:p.fitossanidade||'',photo_count:(p.photos||[]).length},geometry:{type:'Point',coordinates:[p.lng,p.lat,p.altitude||0]}}))}
         content=JSON.stringify(gj,null,2);mime='application/geo+json';fname=`pontos-uft-${ts}.geojson`;
     }else{
-        const h=['ID','Nome','Latitude','Longitude','UTM_X','UTM_Y','UTM_Zona','Precisao_m','Categoria','Descricao','Especie','UsoSolo','DAP_cm','Altura_m','Fitossanidade','DataHora'];
-        const rows=points.map(p=>[p.id,`"${p.name}"`,p.lat,p.lng,p.utmX||'',p.utmY||'',p.utmZone||'',p.accuracy,p.category,`"${p.description||''}"`,`"${p.especie||''}"`,`"${p.usoSolo||''}"`,p.dap||'',p.altura||'',`"${p.fitossanidade||''}"`,p.timestamp]);
+        const h=['ID','Nome','Latitude','Longitude','UTM_X','UTM_Y','UTM_Zona','Precisao_m','Categoria','Descricao','Especie','UsoSolo','DAP_cm','Altura_m','Fitossanidade','Fotos','DataHora'];
+        const rows=points.map(p=>[p.id,`"${p.name}"`,p.lat,p.lng,p.utmX||'',p.utmY||'',p.utmZone||'',p.accuracy,p.category,`"${p.description||''}"`,`"${p.especie||''}"`,`"${p.usoSolo||''}"`,p.dap||'',p.altura||'',`"${p.fitossanidade||''}"`,((p.photos||[]).length),p.timestamp]);
         content=[h.join(','),...rows.map(r=>r.join(','))].join('\n');mime='text/csv';fname=`pontos-uft-${ts}.csv`;
     }
     downloadFile(content,mime,fname);showToast(`Arquivo ${format.toUpperCase()} baixado!`,'success');
 }
+
+// KML avançado com ícones e cores por categoria
+function exportKMLEnhanced(){
+    if(points.length===0){showToast('Nenhum dado para exportar','error');return;}
+    const ts=new Date().toISOString().split('T')[0];
+    const styles=Object.entries(CATEGORY_COLORS).map(([cat,hex])=>`
+    <Style id="style_${cat}">
+        <IconStyle><color>ff${kmlColorFromHex(hex)}</color><scale>1.2</scale><Icon><href>${CATEGORY_KML_ICONS[cat]}</href></Icon></IconStyle>
+        <LabelStyle><color>ff${kmlColorFromHex(hex)}</color><scale>0.9</scale></LabelStyle>
+        <BalloonStyle><text><![CDATA[<b>$[name]</b><br/>$[description]]]></text></BalloonStyle>
+    </Style>`).join('');
+    const fitoLabel={otima:'Ótima',boa:'Boa',regular:'Regular',ruim:'Ruim/Doença',praga:'Praga',seca:'Seca',morta:'Morta'};
+    const usoLabel={'floresta_nativa':'Floresta Nativa','floresta_plantada':'Floresta Plantada','pastagem':'Pastagem','lavoura':'Lavoura','cerrado':'Cerrado','app':'APP','reserva_legal':'Reserva Legal','area_degradada':'Área Degradada','urbano':'Urbano','agua':'Corpo d\'Água','outro':'Outro'};
+    const placemarks=points.map(p=>{
+        const desc=`<![CDATA[
+<table>
+<tr><td><b>Coordenadas</b></td><td>${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</td></tr>
+${p.utmX?`<tr><td><b>UTM X/Y</b></td><td>${Math.round(p.utmX)}, ${Math.round(p.utmY)} (Zona ${p.utmZone}S)</td></tr>`:''}
+<tr><td><b>Precisão</b></td><td>±${Math.round(p.accuracy)} m</td></tr>
+${p.especie?`<tr><td><b>Espécie</b></td><td>${p.especie}</td></tr>`:''}
+${p.usoSolo?`<tr><td><b>Uso do Solo</b></td><td>${usoLabel[p.usoSolo]||p.usoSolo}</td></tr>`:''}
+${p.dap?`<tr><td><b>DAP</b></td><td>${p.dap} cm</td></tr>`:''}
+${p.altura?`<tr><td><b>Altura</b></td><td>${p.altura} m</td></tr>`:''}
+${p.fitossanidade?`<tr><td><b>Fitossanidade</b></td><td>${fitoLabel[p.fitossanidade]||p.fitossanidade}</td></tr>`:''}
+${p.description?`<tr><td><b>Obs.</b></td><td>${p.description}</td></tr>`:''}
+<tr><td><b>Data/Hora</b></td><td>${new Date(p.timestamp).toLocaleString('pt-BR')}</td></tr>
+<tr><td><b>Fotos</b></td><td>${(p.photos||[]).length}</td></tr>
+</table>
+]]>`;
+        return `<Placemark>
+    <name>${p.name}</name>
+    <description>${desc}</description>
+    <styleUrl>#style_${p.category||'other'}</styleUrl>
+    <TimeStamp><when>${p.timestamp}</when></TimeStamp>
+    <Point><coordinates>${p.lng},${p.lat},${p.altitude||0}</coordinates></Point>
+</Placemark>`;
+    }).join('\n');
+    const kml=`<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+<Document>
+    <name>GeoCollector UFT — ${currentSessionName}</name>
+    <description>UFT Campus Gurupi · Sensoriamento Remoto e SIG · Prof. Dsc. Jacinto Pereira Santos · Gerado em ${new Date().toLocaleString('pt-BR')}</description>
+    ${styles}
+    <Folder><name>Pontos Coletados (${points.length})</name>
+    ${placemarks}
+    </Folder>
+</Document>
+</kml>`;
+    downloadFile(kml,'application/vnd.google-earth.kml+xml',`pontos-uft-${ts}-enhanced.kml`);
+    showToast('KML avançado exportado!','success');
+}
+
+function kmlColorFromHex(hex) {
+    // Converte #RRGGBB → BBGGRR (formato KML sem alpha)
+    const r = hex.slice(1,3), g = hex.slice(3,5), b = hex.slice(5,7);
+    return (b + g + r).toLowerCase();
+}
+
 function exportPolygon(format){
     if(!lastCalculatedArea){showToast('Calcule a área primeiro','error');return;}
-    const ts=new Date().toISOString().split('T')[0];const{area_m2,area_ha,perimeter,vertices,zone,points:pp}=lastCalculatedArea;let content,mime,fname;
+    const ts=new Date().toISOString().split('T')[0];
+    const{area_m2,area_ha,perimeter,vertices,zone,points:pp}=lastCalculatedArea;
+    let content,mime,fname;
     switch(format){
-        case 'geojson':{const coords=pp.map(p=>[p.lng,p.lat]);coords.push(coords[0]);const gj={type:'FeatureCollection',features:[{type:'Feature',properties:{area_m2,area_ha,perimeter,vertices,utm_zone:zone,datum:'SIRGAS 2000',calculated_at:new Date().toISOString(),institution:'UFT',course:'Agronomia/Eng.Florestal',campus:'Gurupi',professor:'Prof. Dsc. Jacinto Pereira Santos'},geometry:{type:'Polygon',coordinates:[coords]}}]};content=JSON.stringify(gj,null,2);mime='application/geo+json';fname=`poligono-uft-${ts}.geojson`;break;}
-        case 'kml':{const kmlC=pp.map(p=>`${p.lng},${p.lat},0`).join(' ')+` ${pp[0].lng},${pp[0].lat},0`;content=`<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><n>Polígono UFT Gurupi</n><description>Área: ${area_ha.toFixed(4)} ha — Perímetro: ${perimeter.toFixed(2)} m</description><Style id="s"><PolyStyle><color>7f00ff00</color><fill>1</fill></PolyStyle><LineStyle><color>ff00ff00</color><width>3</width></LineStyle></Style><Placemark><n>Área Calculada</n><styleUrl>#s</styleUrl><Polygon><outerBoundaryIs><LinearRing><coordinates>${kmlC}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></Document></kml>`;mime='application/vnd.google-earth.kml+xml';fname=`poligono-uft-${ts}.kml`;break;}
+        case 'geojson':{const coords=pp.map(p=>[p.lng,p.lat]);coords.push(coords[0]);const gj={type:'FeatureCollection',features:[{type:'Feature',properties:{area_m2,area_ha,perimeter,vertices,utm_zone:zone,datum:'SIRGAS 2000',calculated_at:new Date().toISOString(),institution:'UFT',campus:'Gurupi',professor:'Prof. Dsc. Jacinto Pereira Santos'},geometry:{type:'Polygon',coordinates:[coords]}}]};content=JSON.stringify(gj,null,2);mime='application/geo+json';fname=`poligono-uft-${ts}.geojson`;break;}
         case 'csv':{const h=['Vertice','Nome','Lat','Lng','UTM_X','UTM_Y','Precisao_m'];const rows=pp.map((p,i)=>[i+1,`"${p.name}"`,p.lat,p.lng,p.utmX,p.utmY,p.accuracy]);rows.push(['','','','','','',''],['Area_m2',area_m2,'','','','',''],['Area_ha',area_ha,'','','','',''],['Perimetro_m',perimeter,'','','','','']);content=[h.join(','),...rows.map(r=>r.join(','))].join('\n');mime='text/csv';fname=`vertices-uft-${ts}.csv`;break;}
         case 'report':{content=`RELATÓRIO DE CÁLCULO DE ÁREA\n${'='.repeat(50)}\nInstituição: UFT - Universidade Federal do Tocantins\nCurso: Agronomia / Engenharia Florestal — Campus Gurupi\nDisciplina: Sensoriamento Remoto e SIG\nProfessor: Prof. Dsc. Jacinto Pereira Santos\nSessão: ${currentSessionName}\nData: ${new Date().toLocaleString('pt-BR')}\n\nPOLÍGONO\n${'-'.repeat(50)}\nÁrea:      ${area_m2.toFixed(2)} m²\nÁrea:      ${area_ha.toFixed(4)} ha\nPerímetro: ${perimeter.toFixed(2)} m\nVértices:  ${vertices}\nZona UTM:  ${zone}S (SIRGAS 2000)\n\nVÉRTICES\n${'-'.repeat(50)}\n${pp.map((p,i)=>`\n${i+1}. ${p.name}\n  Lat: ${p.lat.toFixed(6)}°  Lng: ${p.lng.toFixed(6)}°\n  UTM X: ${p.utmX.toFixed(2)} m  UTM Y: ${p.utmY.toFixed(2)} m\n  Precisão: ±${p.accuracy} m${p.especie?'\n  Espécie: '+p.especie:''}${p.dap?'\n  DAP: '+p.dap+' cm':''}${p.altura?'\n  Altura: '+p.altura+' m':''}`).join('\n')}\n\nMETODOLOGIA\n${'-'.repeat(50)}\nFórmula de Shoelace (Gauss) em coordenadas UTM.\n\nResponsável: _________________________\nData: _________________________\n`;mime='text/plain';fname=`relatorio-uft-${ts}.txt`;break;}
     }
-    downloadFile(content,mime,fname);showToast(`Exportado como ${format.toUpperCase()}!`,'success');
+    if(content){downloadFile(content,mime,fname);showToast(`Exportado como ${format.toUpperCase()}!`,'success');}
 }
-function downloadFile(content,mime,filename){const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
 
-// ═══════════════════════════════════════════════════════
-//  STORAGE
-// ═══════════════════════════════════════════════════════
-function savePoints(){localStorage.setItem('geoPoints',JSON.stringify(points));localStorage.setItem('currentSessionId',currentSessionId);localStorage.setItem('currentSessionName',currentSessionName);}
+function exportPolygonKMLEnhanced(){
+    if(!lastCalculatedArea){showToast('Calcule a área primeiro','error');return;}
+    const ts=new Date().toISOString().split('T')[0];
+    const{area_m2,area_ha,perimeter,vertices,zone,points:pp}=lastCalculatedArea;
+    const kmlCoords=pp.map(p=>`${p.lng},${p.lat},0`).join('\n            ')+`\n            ${pp[0].lng},${pp[0].lat},0`;
+    const kml=`<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+    <name>Polígono UFT — ${currentSessionName}</name>
+    <description>Área: ${area_ha.toFixed(4)} ha · Perímetro: ${perimeter.toFixed(2)} m · Zona UTM ${zone}S (SIRGAS 2000)</description>
+    <Style id="polyStyle">
+        <PolyStyle><color>3300aa00</color><fill>1</fill><outline>1</outline></PolyStyle>
+        <LineStyle><color>ff00aa00</color><width>3</width></LineStyle>
+    </Style>
+    <Placemark>
+        <name>Área Calculada — ${area_ha.toFixed(4)} ha</name>
+        <description><![CDATA[
+            <b>Área:</b> ${area_ha.toFixed(4)} ha (${area_m2.toFixed(2)} m²)<br/>
+            <b>Perímetro:</b> ${perimeter.toFixed(2)} m<br/>
+            <b>Vértices:</b> ${vertices}<br/>
+            <b>Zona UTM:</b> ${zone}S (SIRGAS 2000)<br/>
+            <b>Método:</b> Fórmula de Gauss (Shoelace)<br/>
+            <b>Sessão:</b> ${currentSessionName}<br/>
+            <b>Prof.:</b> Prof. Dsc. Jacinto Pereira Santos<br/>
+            <b>UFT · Campus Gurupi</b>
+        ]]></description>
+        <styleUrl>#polyStyle</styleUrl>
+        <Polygon>
+            <outerBoundaryIs><LinearRing><coordinates>
+            ${kmlCoords}
+            </coordinates></LinearRing></outerBoundaryIs>
+        </Polygon>
+    </Placemark>
+    ${pp.map((p,i)=>`<Placemark><name>V${i+1} — ${p.name}</name><Point><coordinates>${p.lng},${p.lat},0</coordinates></Point></Placemark>`).join('\n    ')}
+</Document>
+</kml>`;
+    downloadFile(kml,'application/vnd.google-earth.kml+xml',`poligono-uft-${ts}-enhanced.kml`);
+    showToast('KML do polígono exportado!','success');
+}
 
-// ═══════════════════════════════════════════════════════
+// Backup JSON completo (sem fotos em Base64 — dados estruturais)
+function syncBackupJSON(){
+    if(points.length===0){showToast('Nenhum dado para backup','error');return;}
+    const ts=new Date().toISOString().split('T')[0];
+    const backup={
+        app: 'GeoCollector UFT v4.0',
+        generated: new Date().toISOString(),
+        institution: 'Universidade Federal do Tocantins',
+        campus: 'Campus Gurupi',
+        professor: 'Prof. Dsc. Jacinto Pereira Santos',
+        discipline: 'Sensoriamento Remoto e SIG',
+        session: { id: currentSessionId, name: currentSessionName },
+        coordSystem, utmZone,
+        stats: {
+            totalPoints: points.length,
+            totalPhotos: points.reduce((a,p)=>a+(p.photos||[]).length,0),
+            areasCalculated: areasCalcCount,
+            avgAccuracy: points.length ? (points.reduce((a,p)=>a+p.accuracy,0)/points.length).toFixed(2) : null
+        },
+        points: points.map(p=>({...p, photos: (p.photos||[]).map(ph=>({...ph, data:'[BASE64_OMITIDO_PARA_BACKUP_ESTRUTURAL]'}))})),
+        sessions: sessions.map(s=>({id:s.id,name:s.name,savedAt:s.savedAt,pointCount:s.pointCount}))
+    };
+    downloadFile(JSON.stringify(backup,null,2),'application/json',`backup-geocollector-${ts}.json`);
+    showToast('Backup JSON gerado! Salve no Google Drive.','success');
+}
+
+function downloadFile(content,mime,filename){
+    const blob=new Blob([content],{type:mime});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=filename;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════
 //  TOAST
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 let toastTimer;
-function showToast(message,type='success'){
-    let t=document.getElementById('mainToast');if(!t){t=document.createElement('div');t.id='mainToast';t.className='toast';document.body.appendChild(t);}
-    clearTimeout(toastTimer);const icons={success:'fa-check-circle',error:'fa-exclamation-circle',info:'fa-info-circle'};
+function showToast(message, type='success'){
+    let t=document.getElementById('mainToast');
+    if(!t){t=document.createElement('div');t.id='mainToast';t.className='toast';document.body.appendChild(t);}
+    clearTimeout(toastTimer);
+    const icons={success:'fa-check-circle',error:'fa-exclamation-circle',info:'fa-info-circle'};
     t.className='toast '+type;t.innerHTML=`<i class="fas ${icons[type]||icons.success}"></i> ${message}`;
     requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));
     toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-// ═══════════════════════════════════════════════════════
-//  TEMA CLARO / ESCURO
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  TEMA
+// ═══════════════════════════════════════════════════
 function applyTheme(theme){
     const html=document.documentElement;
     const icon=document.getElementById('themeIcon');
     const metaTheme=document.getElementById('metaThemeColor');
-    if(theme==='dark'){
-        html.setAttribute('data-theme','dark');
-        if(icon){icon.className='fas fa-sun';}
-        if(metaTheme){metaTheme.setAttribute('content','#0F1416');}
-    } else {
-        html.removeAttribute('data-theme');
-        if(icon){icon.className='fas fa-moon';}
-        if(metaTheme){metaTheme.setAttribute('content','#F6F8F9');}
-    }
+    if(theme==='dark'){html.setAttribute('data-theme','dark');if(icon)icon.className='fas fa-sun';if(metaTheme)metaTheme.setAttribute('content','#0F1416');}
+    else{html.removeAttribute('data-theme');if(icon)icon.className='fas fa-moon';if(metaTheme)metaTheme.setAttribute('content','#F6F8F9');}
     localStorage.setItem('geocollector-theme',theme);
-    // Atualiza tiles do mapa se já carregado
-    try {
-        if(window.map){ window.map.invalidateSize(); }
-        if(window.mapArea){ window.mapArea.invalidateSize(); }
-    } catch(e){}
+    try{if(window.map)window.map.invalidateSize();if(window.mapArea)window.mapArea.invalidateSize();}catch(e){}
 }
-
 function toggleTheme(){
     const current=document.documentElement.getAttribute('data-theme');
     const next=current==='dark'?'light':'dark';
     applyTheme(next);
     showToast(next==='dark'?'Modo escuro ativado':'Modo claro ativado','info');
 }
-
-// Inicializa tema salvo (padrão: claro)
-(function initTheme(){
-    const saved=localStorage.getItem('geocollector-theme');
-    applyTheme(saved||'light');
-})();
+(function initTheme(){applyTheme(localStorage.getItem('geocollector-theme')||'light');})();
 </script>
 </body>
 </html>
