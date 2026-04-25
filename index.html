@@ -18,6 +18,8 @@
 
     <style>
         *, *::before, *::after { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; user-select:none; }
+        /* Permitir seleção de texto em elementos de dados copiáveis */
+        .coord-val, .point-coords, .area-detail-val, .area-big, .field-input, textarea, select, .stat-value { user-select:text; -webkit-user-select:text; }
 
         :root {
             --md-sys-color-primary:#2E7D32; --md-sys-color-on-primary:#FFFFFF;
@@ -372,8 +374,46 @@
         .about-discipline-tag { margin-top:12px;background:rgba(46,125,50,0.07);padding:8px 16px;border-radius:var(--shape-md);display:inline-block;border:1px solid rgba(46,125,50,0.18); }
         [data-theme="dark"] .about-discipline-tag { background:rgba(130,216,200,0.08);border-color:rgba(130,216,200,0.2); }
 
-        /* THEME TOGGLE BUTTON */
-        #themeToggle { margin-left:8px; }
+        /* ── ONBOARDING ── */
+        .onboarding-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.35s; }
+        .onboarding-overlay.open { opacity:1;pointer-events:all; }
+        .onboarding-sheet { background:var(--surface);border-radius:28px 28px 0 0;padding:24px 24px calc(24px + var(--safe-bottom));width:100%;max-width:500px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.32,0.72,0,1); }
+        .onboarding-overlay.open .onboarding-sheet { transform:translateY(0); }
+        .ob-steps { display:flex;gap:6px;justify-content:center;margin-bottom:24px; }
+        .ob-dot { width:28px;height:4px;border-radius:2px;background:var(--border);transition:background 0.3s; }
+        .ob-dot.active { background:var(--primary);width:40px; }
+        .ob-icon { width:72px;height:72px;background:var(--primary-container);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--md-sys-color-on-primary-container);margin:0 auto 16px; }
+        .ob-title { font-size:22px;font-weight:800;text-align:center;margin-bottom:8px;letter-spacing:-0.3px; }
+        .ob-desc { font-size:14px;color:var(--muted);text-align:center;line-height:1.6;font-weight:500;margin-bottom:24px; }
+        .ob-tip { background:rgba(46,125,50,0.07);border-radius:var(--shape-md);padding:10px 14px;font-size:12px;color:var(--primary);font-weight:700;text-align:center;margin-bottom:20px;border:1px solid rgba(46,125,50,0.18); }
+        [data-theme="dark"] .ob-tip { background:rgba(130,216,200,0.1);border-color:rgba(130,216,200,0.2);color:var(--primary); }
+        .ob-nav { display:flex;gap:10px; }
+
+        /* ── TRACK LOG ── */
+        .tracklog-panel { background:var(--card);border:1.5px solid rgba(21,101,192,0.25);border-radius:var(--shape-xl);padding:14px 16px;margin-bottom:12px;display:none; }
+        .tracklog-panel.active { display:block; }
+        .tracklog-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
+        .tracklog-badge { display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--tertiary); }
+        .track-dot { width:7px;height:7px;border-radius:50%;background:var(--tertiary);animation:pulse 1s infinite;flex-shrink:0; }
+        .tracklog-stats { display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px; }
+        .tracklog-stat { background:var(--card-high);border-radius:var(--shape-md);padding:8px;text-align:center; }
+        .tracklog-stat-val { font-size:16px;font-weight:800;font-family:'Fira Code',monospace;color:var(--tertiary); }
+        .tracklog-stat-lbl { font-size:10px;color:var(--muted);font-weight:600;margin-top:2px; }
+        .tracklog-export-row { display:flex;gap:8px;margin-top:10px; }
+        .tracklog-export-btn { flex:1;background:var(--card-high);border:1.5px solid var(--border);border-radius:var(--shape-lg);padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:700;color:var(--text);transition:all 0.2s; }
+        .tracklog-export-btn:active { border-color:var(--primary); }
+
+        /* ── DISTÂNCIA ── */
+        .distance-panel { background:linear-gradient(145deg,rgba(21,101,192,0.08),rgba(46,125,50,0.05));border:1.5px solid rgba(21,101,192,0.2);border-radius:var(--shape-xl);padding:14px;margin-bottom:12px;display:none; }
+        .distance-panel.visible { display:block; }
+        .dist-result-big { font-size:32px;font-weight:800;font-family:'Fira Code',monospace;color:var(--tertiary);line-height:1; }
+        .dist-segs { display:flex;flex-direction:column;gap:4px;margin-top:8px;max-height:100px;overflow-y:auto; }
+        .dist-seg-row { display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border); }
+        .dist-seg-row:last-child { border-bottom:none; }
+
+        /* ── ARIA LIVE REGION ── */
+        .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+
 
         /* DASHBOARD */
         .hero-card-dash { background:linear-gradient(145deg,rgba(21,101,192,0.09),rgba(46,125,50,0.06));border-color:rgba(21,101,192,0.2)!important; }
@@ -431,23 +471,26 @@
 <body>
 <div id="app">
     <div class="status-bar-space"></div>
-    <div id="offlineBanner"><i class="fas fa-wifi-slash" style="margin-right:6px"></i>Modo Offline — dados salvos localmente</div>
+    <div id="offlineBanner" role="alert" aria-live="assertive"><i class="fas fa-wifi-slash" aria-hidden="true" style="margin-right:6px"></i>Modo Offline — dados salvos localmente</div>
 
     <!-- TOP APP BAR -->
-    <header class="top-nav">
+    <header class="top-nav" role="banner">
         <div class="top-nav-brand">
-            <div class="top-nav-logo"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="top-nav-logo" aria-hidden="true"><i class="fas fa-map-marker-alt"></i></div>
             <div>
                 <div class="top-nav-title">GeoCollector</div>
                 <div class="top-nav-sub" id="sessionNameDisplay">UFT · Campus Gurupi</div>
             </div>
         </div>
-        <div id="gpsBadge" class="gps-badge inactive">
-            <div class="gps-dot"></div>
+        <div id="gpsBadge" class="gps-badge inactive" role="status" aria-live="polite" aria-label="Status do GPS">
+            <div class="gps-dot" aria-hidden="true"></div>
             <span id="gpsText">GPS</span>
         </div>
-        <button id="themeToggle" onclick="toggleTheme()" class="icon-btn" title="Alternar tema" style="flex-shrink:0">
-            <i id="themeIcon" class="fas fa-moon"></i>
+        <button onclick="showOnboarding()" class="icon-btn" title="Guia de uso" aria-label="Abrir guia de primeiro uso" style="flex-shrink:0">
+            <i class="fas fa-question-circle" aria-hidden="true"></i>
+        </button>
+        <button id="themeToggle" onclick="toggleTheme()" class="icon-btn" title="Alternar tema" aria-label="Alternar entre tema claro e escuro" style="flex-shrink:0">
+            <i id="themeIcon" class="fas fa-moon" aria-hidden="true"></i>
         </button>
     </header>
 
@@ -522,21 +565,111 @@
 
             <p class="section-label">Captura</p>
             <div class="capture-hero-card">
-                <button id="btnCapture" onclick="captureLocation()" class="btn btn-fab-large" style="margin-bottom:14px">
-                    <i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização
+                <button id="btnCapture" onclick="captureLocation()" class="btn btn-fab-large" style="margin-bottom:14px" aria-label="Capturar localização GPS atual">
+                    <i class="fas fa-crosshairs" style="font-size:20px" aria-hidden="true"></i> Capturar Localização
                 </button>
                 <div class="btn-group">
-                    <button id="btnTrack" onclick="startTracking()" class="btn btn-ghost btn-sm">
-                        <i class="fas fa-play" style="color:var(--accent)"></i> Rastrear
+                    <button id="btnTrack" onclick="startTracking()" class="btn btn-ghost btn-sm" aria-label="Iniciar rastreamento automático de pontos">
+                        <i class="fas fa-play" style="color:var(--accent)" aria-hidden="true"></i> Rastrear
                     </button>
-                    <button onclick="clearAllPoints()" class="btn btn-danger-ghost btn-sm">
-                        <i class="fas fa-trash-alt"></i> Limpar Tudo
+                    <button onclick="clearAllPoints()" class="btn btn-danger-ghost btn-sm" aria-label="Limpar todos os pontos coletados">
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i> Limpar Tudo
                     </button>
                 </div>
                 <div class="stats-row" style="margin-top:14px">
                     <div class="stat-box"><div id="countPoints" class="stat-value">0</div><div class="stat-label">Pontos</div></div>
                     <div class="stat-box"><div id="currentAccuracy" class="stat-value" style="font-size:18px">--</div><div class="stat-label">Precisão</div></div>
                     <div class="stat-box"><div id="lastUpdate" class="stat-value" style="font-size:16px">--:--</div><div class="stat-label">Último</div></div>
+                </div>
+            </div>
+
+            <!-- ══ TRACK LOG PANEL ══ -->
+            <p class="section-label" style="margin-top:4px">
+                <i class="fas fa-route" aria-hidden="true" style="color:var(--tertiary)"></i> Track Log — Trilha
+            </p>
+            <div class="card" style="padding:14px;margin-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                    <div>
+                        <div style="font-size:13px;font-weight:800">Rastreamento de Trilha</div>
+                        <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500">Registra posição em intervalo configurável</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px">
+                        <label class="field-label" style="margin:0;font-size:11px">Intervalo:</label>
+                        <select id="trackIntervalSelect" class="utm-select" style="padding:6px 8px;font-size:12px;width:auto" aria-label="Intervalo de gravação da trilha em segundos">
+                            <option value="3">3s</option>
+                            <option value="5" selected>5s</option>
+                            <option value="10">10s</option>
+                            <option value="30">30s</option>
+                            <option value="60">1min</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-bottom:0">
+                    <button id="btnTrackLog" onclick="toggleTrackLog()" class="btn btn-tonal btn-sm" aria-label="Iniciar gravação de trilha GPS">
+                        <i class="fas fa-route" aria-hidden="true"></i> Iniciar Trilha
+                    </button>
+                    <button onclick="clearTrackLog()" class="btn btn-ghost btn-sm" aria-label="Limpar trilha gravada">
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i> Limpar Trilha
+                    </button>
+                </div>
+                <!-- Painel de info da trilha ativa -->
+                <div id="trackLogPanel" class="tracklog-panel" aria-live="polite">
+                    <div class="tracklog-header">
+                        <div class="tracklog-badge">
+                            <div class="track-dot" aria-hidden="true"></div>
+                            <span>Gravando trilha...</span>
+                        </div>
+                        <span id="trackLogTimer" style="font-size:12px;font-family:'Fira Code',monospace;color:var(--muted)">00:00</span>
+                    </div>
+                    <div class="tracklog-stats">
+                        <div class="tracklog-stat"><div id="tlPoints" class="tracklog-stat-val">0</div><div class="tracklog-stat-lbl">Pontos</div></div>
+                        <div class="tracklog-stat"><div id="tlDist" class="tracklog-stat-val">0m</div><div class="tracklog-stat-lbl">Distância</div></div>
+                        <div class="tracklog-stat"><div id="tlAcc" class="tracklog-stat-val">--</div><div class="tracklog-stat-lbl">Precisão</div></div>
+                    </div>
+                    <div class="tracklog-export-row">
+                        <div class="tracklog-export-btn" onclick="exportTrackLog('gpx')" role="button" aria-label="Exportar trilha em formato GPX"><i class="fas fa-route" aria-hidden="true" style="font-size:18px;color:var(--tertiary)"></i>GPX</div>
+                        <div class="tracklog-export-btn" onclick="exportTrackLog('kml')" role="button" aria-label="Exportar trilha em formato KML"><i class="fas fa-globe" aria-hidden="true" style="font-size:18px;color:var(--warn)"></i>KML</div>
+                        <div class="tracklog-export-btn" onclick="exportTrackLog('geojson')" role="button" aria-label="Exportar trilha em formato GeoJSON"><i class="fas fa-file-code" aria-hidden="true" style="font-size:18px;color:var(--primary)"></i>GeoJSON</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ DISTANCE MEASUREMENT ══ -->
+            <p class="section-label" style="margin-top:4px">
+                <i class="fas fa-ruler-horizontal" aria-hidden="true" style="color:var(--tertiary)"></i> Medição de Distância
+            </p>
+            <div class="card" style="padding:14px;margin-bottom:12px">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500;line-height:1.5">
+                    Selecione ≥ 2 pontos da lista para medir distâncias lineares entre eles (transecto, perfil).
+                </div>
+                <div class="btn-group" style="margin-bottom:10px">
+                    <button onclick="measureDistanceFromSelected()" class="btn btn-ghost btn-sm" aria-label="Calcular distância entre pontos selecionados">
+                        <i class="fas fa-ruler-combined" aria-hidden="true"></i> Medir Selecionados
+                    </button>
+                    <button onclick="clearDistanceMeasure()" class="btn btn-ghost btn-sm" aria-label="Limpar medição de distância">
+                        <i class="fas fa-undo" aria-hidden="true"></i> Limpar
+                    </button>
+                </div>
+                <div id="distancePanel" class="distance-panel" aria-live="polite">
+                    <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Distância Total</div>
+                    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+                        <div id="distTotalM" class="dist-result-big">--</div>
+                        <div style="font-size:14px;color:var(--muted);font-weight:600">m</div>
+                        <div id="distTotalKm" style="font-size:14px;color:var(--muted);font-weight:600">(-- km)</div>
+                    </div>
+                    <div id="distSegments" class="dist-segs"></div>
+                    <div style="display:flex;gap:8px;margin-top:10px">
+                        <div class="tracklog-export-btn" onclick="exportDistanceMeasure('txt')" role="button" aria-label="Exportar medição como texto"><i class="fas fa-file-alt" aria-hidden="true" style="font-size:16px;color:var(--muted)"></i>TXT</div>
+                        <div class="tracklog-export-btn" onclick="exportDistanceMeasure('csv')" role="button" aria-label="Exportar medição como CSV"><i class="fas fa-file-csv" aria-hidden="true" style="font-size:16px;color:var(--accent)"></i>CSV</div>
+                        <div class="tracklog-export-btn" onclick="shareDistanceMeasure()" role="button" aria-label="Compartilhar medição via WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true" style="font-size:16px;color:#25D366"></i>WhatsApp</div>
+                    </div>
+                </div>
+                <!-- Seleção rápida de pontos para distância -->
+                <div style="margin-top:8px">
+                    <div id="distPointSelector" style="display:none">
+                        <div class="section-label" style="padding:0;margin-bottom:6px;font-size:10px">Selecionar pontos para medir:</div>
+                        <div id="distPointList" style="max-height:160px;overflow-y:auto"></div>
+                    </div>
                 </div>
             </div>
 
@@ -614,11 +747,11 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px">
                 <div style="display:flex;align-items:center;gap:8px">
                     <span style="font-size:13px;color:var(--muted);font-weight:500">Selecionados:</span>
-                    <span id="selectionCount" class="sel-counter">0</span>
+                    <span id="selectionCount" class="sel-counter" aria-live="polite" aria-label="pontos selecionados">0</span>
                 </div>
                 <div style="display:flex;gap:8px">
-                    <button onclick="clearSelection()" class="btn btn-ghost btn-sm" style="width:auto"><i class="fas fa-undo"></i> Limpar</button>
-                    <button onclick="autoSelectPolygon()" class="btn btn-tonal btn-sm" style="width:auto"><i class="fas fa-magic"></i> Auto</button>
+                    <button onclick="clearSelection()" class="btn btn-ghost btn-sm" style="width:auto" aria-label="Limpar seleção de pontos"><i class="fas fa-undo" aria-hidden="true"></i> Limpar</button>
+                    <button onclick="autoSelectPolygon()" class="btn btn-tonal btn-sm" style="width:auto" aria-label="Selecionar automaticamente todos os pontos para o polígono"><i class="fas fa-magic" aria-hidden="true"></i> Auto</button>
                 </div>
             </div>
             <div class="map-wrap" style="margin-bottom:12px">
@@ -746,7 +879,7 @@
             <div class="about-hero">
                 <div class="about-logo"><i class="fas fa-map-marker-alt"></i></div>
                 <div style="font-size:26px;font-weight:800;margin-bottom:6px;letter-spacing:-0.3px">GeoCollector UFT</div>
-                <div style="font-size:13px;color:var(--muted);font-weight:500">v4.0 · Sensoriamento Remoto e SIG</div>
+                <div style="font-size:13px;color:var(--muted);font-weight:500">v5.0 · Sensoriamento Remoto e SIG</div>
                 <div class="about-badge-primary">
                     <i class="fas fa-graduation-cap" style="color:var(--tertiary);font-size:12px"></i>
                     <span style="font-size:12px;color:var(--tertiary);font-weight:700">Agronomia · Engenharia Florestal · UFT</span>
@@ -770,11 +903,16 @@
                     <div>
                         <div style="font-size:15px;font-weight:800;margin-bottom:4px">Prof. Dr. Jacinto Pereira Santos</div>
                         <div style="font-size:12px;color:var(--primary);font-weight:700;margin-bottom:8px">Doutor em Ciências · DSc.</div>
-                        <div style="font-size:13px;color:var(--muted);line-height:1.65;font-weight:500">Iniciativa do <strong style="color:var(--text)">Prof. Dsc. Jacinto Pereira Santos</strong>, professor de <strong style="color:var(--text)">Sensoriamento Remoto e SIG</strong> nos cursos de Agronomia e Engenharia Florestal da UFT — Campus Gurupi.</div>
+                        <div style="font-size:13px;color:var(--muted);line-height:1.65;font-weight:500">Iniciativa do <strong style="color:var(--text)">Prof. Dsc. Jacinto Pereira Santos</strong>, professor de <strong style="color:var(--text)">Sensoriamento Remoto e SIG</strong> no curso de Agronomia da UFT — Campus Gurupi.</div>
                     </div>
                 </div>
             </div>
-            <p class="section-label">Funcionalidades v4</p>
+            <p class="section-label">Funcionalidades v5</p>
+            <div style="margin-bottom:10px">
+                <button onclick="showOnboarding()" class="btn btn-tonal" aria-label="Abrir guia de uso do aplicativo">
+                    <i class="fas fa-graduation-cap" aria-hidden="true"></i> Ver Guia de Uso
+                </button>
+            </div>
             <div class="card">
                 <div class="feature-row"><div class="feature-icon"><i class="fas fa-crosshairs"></i></div><div><div class="feature-title">Coleta de Pontos GPS com Trava de Precisão</div><div class="feature-desc">Captura precisa com trava lógica configurável — o botão só ativa quando a precisão atinge o limite definido.</div></div></div>
                 <div class="feature-row"><div class="feature-icon"><i class="fas fa-camera"></i></div><div><div class="feature-title">Fotos por Ponto</div><div class="feature-desc">Capture imagens diretamente da câmera do dispositivo e associe uma ou mais fotos a cada ponto coletado.</div></div></div>
@@ -782,14 +920,15 @@
                 <div class="feature-row"><div class="feature-icon"><i class="fas fa-chart-bar"></i></div><div><div class="feature-title">Dashboard de Estatísticas</div><div class="feature-desc">Gráficos de distribuição por espécie, uso do solo, classes de DAP e qualidade GPS da sessão.</div></div></div>
                 <div class="feature-row"><div class="feature-icon"><i class="fas fa-globe"></i></div><div><div class="feature-title">Exportação KML Avançada</div><div class="feature-desc">KML com ícones coloridos por categoria compatível com Google Earth Pro e QGIS.</div></div></div>
                 <div class="feature-row"><div class="feature-icon"><i class="fas fa-cloud-download-alt"></i></div><div><div class="feature-title">Backup JSON Completo</div><div class="feature-desc">Gere backup completo da sessão (pontos + fotos + metadados) em JSON para armazenamento externo.</div></div></div>
-                <div class="feature-row"><div class="feature-icon"><i class="fas fa-wifi-slash"></i></div><div><div class="feature-title">Modo Offline (PWA)</div><div class="feature-desc">Funciona sem internet via Service Worker. Dados armazenados no IndexedDB para maior capacidade e estabilidade.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-route"></i></div><div><div class="feature-title">Track Log — Trilha GPS</div><div class="feature-desc">Grave automaticamente sua trilha de caminhamento em campo com intervalo configurável. Exporte em GPX (padrão GPS), KML ou GeoJSON para uso em QGIS ou Google Earth.</div></div></div>
+                <div class="feature-row"><div class="feature-icon"><i class="fas fa-ruler-horizontal"></i></div><div><div class="feature-title">Medição de Distância Linear</div><div class="feature-desc">Selecione dois ou mais pontos coletados para medir distâncias lineares entre eles (transectos, perfis). Exporte os resultados em TXT, CSV ou compartilhe via WhatsApp.</div></div></div>
             </div>
             <p class="section-label">Estatísticas da Sessão</p>
             <div class="card">
                 <div class="stats-row">
                     <div class="stat-box"><div id="aboutTotalPoints" class="stat-value">0</div><div class="stat-label">Pontos</div></div>
                     <div class="stat-box"><div id="aboutAreas" class="stat-value">0</div><div class="stat-label">Áreas calc.</div></div>
-                    <div class="stat-box"><div class="stat-value" style="font-size:13px">v4.0</div><div class="stat-label">Versão</div></div>
+                    <div class="stat-box"><div class="stat-value" style="font-size:13px">v5.0</div><div class="stat-label">Versão</div></div>
                 </div>
             </div>
             <div style="text-align:center;padding:24px 0 8px;color:var(--muted);font-size:12px;font-weight:500">
@@ -800,39 +939,42 @@
 
     </div><!-- end content-area -->
 
+    <!-- ARIA LIVE REGION para anúncios de leitores de tela -->
+    <div id="ariaAnnouncer" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
     <!-- NAVIGATION BAR -->
-    <nav class="tab-bar">
-        <div class="tab-item active" id="tab-capture" onclick="switchTab('capture')">
-            <div class="tab-indicator"></div>
-            <div class="tab-icon-wrap"><i class="fas fa-crosshairs tab-icon"></i></div>
+    <nav class="tab-bar" role="navigation" aria-label="Navegação principal">
+        <div class="tab-item active" id="tab-capture" onclick="switchTab('capture')" role="tab" aria-selected="true" aria-controls="screen-capture" tabindex="0">
+            <div class="tab-indicator" aria-hidden="true"></div>
+            <div class="tab-icon-wrap"><i class="fas fa-crosshairs tab-icon" aria-hidden="true"></i></div>
             <span class="tab-label">Capturar</span>
         </div>
-        <div class="tab-item" id="tab-map" onclick="switchTab('map')">
-            <div class="tab-indicator"></div>
-            <div class="tab-icon-wrap"><i class="fas fa-map tab-icon"></i></div>
+        <div class="tab-item" id="tab-map" onclick="switchTab('map')" role="tab" aria-selected="false" aria-controls="screen-map" tabindex="0">
+            <div class="tab-indicator" aria-hidden="true"></div>
+            <div class="tab-icon-wrap"><i class="fas fa-map tab-icon" aria-hidden="true"></i></div>
             <span class="tab-label">Mapa</span>
-            <span id="mapBadge" class="tab-badge" style="display:none">0</span>
+            <span id="mapBadge" class="tab-badge" style="display:none" aria-label="pontos no mapa">0</span>
         </div>
-        <div class="tab-item" id="tab-area" onclick="switchTab('area')">
-            <div class="tab-indicator"></div>
-            <div class="tab-icon-wrap"><i class="fas fa-draw-polygon tab-icon"></i></div>
+        <div class="tab-item" id="tab-area" onclick="switchTab('area')" role="tab" aria-selected="false" aria-controls="screen-area" tabindex="0">
+            <div class="tab-indicator" aria-hidden="true"></div>
+            <div class="tab-icon-wrap"><i class="fas fa-draw-polygon tab-icon" aria-hidden="true"></i></div>
             <span class="tab-label">Área</span>
-            <span id="areaBadge" class="tab-badge" style="display:none">0</span>
+            <span id="areaBadge" class="tab-badge" style="display:none" aria-label="pontos disponíveis">0</span>
         </div>
-        <div class="tab-item" id="tab-sessions" onclick="switchTab('sessions')">
-            <div class="tab-indicator"></div>
-            <div class="tab-icon-wrap"><i class="fas fa-layer-group tab-icon"></i></div>
+        <div class="tab-item" id="tab-sessions" onclick="switchTab('sessions')" role="tab" aria-selected="false" aria-controls="screen-sessions" tabindex="0">
+            <div class="tab-indicator" aria-hidden="true"></div>
+            <div class="tab-icon-wrap"><i class="fas fa-layer-group tab-icon" aria-hidden="true"></i></div>
             <span class="tab-label">Sessões</span>
-            <span id="sessionsBadge" class="tab-badge" style="display:none;background:var(--tertiary);color:var(--md-sys-color-on-tertiary)">0</span>
+            <span id="sessionsBadge" class="tab-badge" style="display:none;background:var(--tertiary);color:var(--md-sys-color-on-tertiary)" aria-label="sessões salvas">0</span>
         </div>
-        <div class="tab-item" id="tab-dashboard" onclick="switchTab('dashboard')">
-            <div class="tab-indicator"></div>
-            <div class="tab-icon-wrap"><i class="fas fa-chart-bar tab-icon"></i></div>
+        <div class="tab-item" id="tab-dashboard" onclick="switchTab('dashboard')" role="tab" aria-selected="false" aria-controls="screen-dashboard" tabindex="0">
+            <div class="tab-indicator" aria-hidden="true"></div>
+            <div class="tab-icon-wrap"><i class="fas fa-chart-bar tab-icon" aria-hidden="true"></i></div>
             <span class="tab-label">Dados</span>
         </div>
-        <div class="tab-item" id="tab-about" onclick="switchTab('about')">
-            <div class="tab-indicator"></div>
-            <div class="tab-icon-wrap"><i class="fas fa-info-circle tab-icon"></i></div>
+        <div class="tab-item" id="tab-about" onclick="switchTab('about')" role="tab" aria-selected="false" aria-controls="screen-about" tabindex="0">
+            <div class="tab-indicator" aria-hidden="true"></div>
+            <div class="tab-icon-wrap"><i class="fas fa-info-circle tab-icon" aria-hidden="true"></i></div>
             <span class="tab-label">Sobre</span>
         </div>
     </nav>
@@ -986,6 +1128,26 @@
     </div>
 </div>
 
+<!-- ONBOARDING MODAL -->
+<div id="onboardingModal" class="onboarding-overlay" role="dialog" aria-modal="true" aria-labelledby="obTitle">
+    <div class="onboarding-sheet">
+        <div class="ob-steps" role="tablist" aria-label="Passos do guia">
+            <div class="ob-dot active" id="obDot0" aria-label="Passo 1 de 4"></div>
+            <div class="ob-dot" id="obDot1" aria-label="Passo 2 de 4"></div>
+            <div class="ob-dot" id="obDot2" aria-label="Passo 3 de 4"></div>
+            <div class="ob-dot" id="obDot3" aria-label="Passo 4 de 4"></div>
+        </div>
+        <div class="ob-icon" id="obIcon" aria-hidden="true">📍</div>
+        <div class="ob-title" id="obTitle">Bem-vindo ao GeoCollector</div>
+        <div class="ob-desc" id="obDesc">Ferramenta de coleta GPS de campo para Sensoriamento Remoto e SIG — UFT Gurupi.</div>
+        <div class="ob-tip" id="obTip">Deslize para conhecer o fluxo de trabalho</div>
+        <div class="ob-nav">
+            <button onclick="obPrev()" id="obBtnPrev" class="btn btn-ghost" style="display:none" aria-label="Passo anterior">Anterior</button>
+            <button onclick="obNext()" id="obBtnNext" class="btn btn-primary" aria-label="Próximo passo">Próximo</button>
+        </div>
+    </div>
+</div>
+
 <!-- REPORT PRINT -->
 <div id="reportPrint">
     <div class="report-page" id="reportContent"></div>
@@ -1136,6 +1298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupOfflineDetection();
     registerServiceWorker();
     updatePWAManifest();
+    checkOnboarding();
 });
 
 // ═══════════════════════════════════════════════════
@@ -1144,7 +1307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-const CACHE='geocollector-v4';
+const CACHE='geocollector-v5';
 const STATIC=['https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
               'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
               'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js',
@@ -1220,12 +1383,13 @@ async function saveSessions() {
 // ═══════════════════════════════════════════════════
 function switchTab(tab) {
     if (tab === currentTab) return;
-    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
+    document.querySelectorAll('.tab-item').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+    const activeTab = document.getElementById('tab-' + tab);
+    if(activeTab){ activeTab.classList.add('active'); activeTab.setAttribute('aria-selected','true'); }
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-' + tab).classList.add('active');
     currentTab = tab;
-    if (tab === 'map')       setTimeout(() => { if(map){map.invalidateSize();updateMainMap();} }, 120);
+    if (tab === 'map')       setTimeout(() => { if(map){map.invalidateSize();updateMainMap();if(trackLogPoints.length>=2)drawTrackLogOnMap();} }, 120);
     if (tab === 'area')      { if(!mapArea) setTimeout(initAreaMap,100); else setTimeout(()=>{mapArea.invalidateSize();updateAreaMap();},120); }
     if (tab === 'about')     { document.getElementById('aboutTotalPoints').textContent=points.length; document.getElementById('aboutAreas').textContent=areasCalcCount; }
     if (tab === 'sessions')  { updateSessionDisplay(); renderSessionsList(); }
@@ -2020,7 +2184,7 @@ function generateReport(){
         <div class="report-header">
             <div class="report-logo">📍</div>
             <div class="report-title">GeoCollector UFT</div>
-            <div class="report-sub">Relatório Técnico de Campo · v4.0</div>
+            <div class="report-sub">Relatório Técnico de Campo · v5.0</div>
             <div style="margin-top:6px;font-size:11px;color:#888">Gerado em: ${now}</div>
         </div>
         <div class="report-section">
@@ -2059,7 +2223,7 @@ function generateReport(){
             </div>
         </div>
         <div class="report-footer" style="margin-top:20px">
-            <div>© 2026 Universidade Federal do Tocantins · GeoCollector UFT v4.0</div>
+            <div>© 2026 Universidade Federal do Tocantins · GeoCollector UFT v5.0</div>
             <div>Gerado em: ${now}</div>
         </div>`;
     showToast('Abrindo relatório para impressão...','info');
@@ -2198,7 +2362,7 @@ function syncBackupJSON(){
     if(points.length===0){showToast('Nenhum dado para backup','error');return;}
     const ts=new Date().toISOString().split('T')[0];
     const backup={
-        app: 'GeoCollector UFT v4.0',
+        app: 'GeoCollector UFT v5.0',
         generated: new Date().toISOString(),
         institution: 'Universidade Federal do Tocantins',
         campus: 'Campus Gurupi',
@@ -2235,17 +2399,382 @@ function downloadFile(content,mime,filename){
 let toastTimer;
 function showToast(message, type='success'){
     let t=document.getElementById('mainToast');
-    if(!t){t=document.createElement('div');t.id='mainToast';t.className='toast';document.body.appendChild(t);}
+    if(!t){t=document.createElement('div');t.id='mainToast';t.className='toast';t.setAttribute('role','alert');t.setAttribute('aria-live','assertive');t.setAttribute('aria-atomic','true');document.body.appendChild(t);}
     clearTimeout(toastTimer);
     const icons={success:'fa-check-circle',error:'fa-exclamation-circle',info:'fa-info-circle'};
-    t.className='toast '+type;t.innerHTML=`<i class="fas ${icons[type]||icons.success}"></i> ${message}`;
+    t.className='toast '+type;t.innerHTML=`<i class="fas ${icons[type]||icons.success}" aria-hidden="true"></i> ${message}`;
+    // Announce to screen readers via dedicated live region
+    const announcer=document.getElementById('ariaAnnouncer');
+    if(announcer){announcer.textContent='';setTimeout(()=>{announcer.textContent=message;},10);}
     requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));
     toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
 // ═══════════════════════════════════════════════════
-//  TEMA
+//  ONBOARDING
 // ═══════════════════════════════════════════════════
+const OB_STEPS = [
+    {
+        icon: '📍',
+        title: 'Bem-vindo ao GeoCollector',
+        desc: 'Ferramenta de coleta GPS de campo para Sensoriamento Remoto e SIG — UFT Campus Gurupi.',
+        tip: '🎓 Desenvolvido para Agronomia e Engenharia Florestal'
+    },
+    {
+        icon: '🛰️',
+        title: '1. Capturar Pontos GPS',
+        desc: 'Na aba Capturar, inicie o monitoramento GPS, aguarde a trava de precisão ficar verde e pressione "Capturar Localização". Você pode registrar espécie, DAP, altura e fotos em cada ponto.',
+        tip: '💡 Trava de precisão: o botão só ativa quando ±precisão ≤ limite configurado'
+    },
+    {
+        icon: '🗺️',
+        title: '2. Visualizar no Mapa',
+        desc: 'A aba Mapa exibe todos os pontos coletados sobre o mapa base. Use "Track Log" para gravar automaticamente sua trilha de caminhamento e exportar em GPX / KML.',
+        tip: '📏 Use "Medição de Distância" para calcular transectos entre pontos'
+    },
+    {
+        icon: '📐',
+        title: '3. Calcular Área e Exportar',
+        desc: 'Na aba Área, selecione ≥ 3 pontos (ou use "Auto") para calcular a área do polígono pela fórmula de Gauss em coordenadas UTM. Exporte em GeoJSON, KML, CSV ou compartilhe diretamente.',
+        tip: '✅ Fluxo: Capturar → Mapa → Área → Exportar'
+    }
+];
+let obStep = 0;
+
+function showOnboarding() {
+    obStep = 0;
+    renderObStep();
+    document.getElementById('onboardingModal').classList.add('open');
+}
+
+function renderObStep() {
+    const s = OB_STEPS[obStep];
+    document.getElementById('obIcon').textContent = s.icon;
+    document.getElementById('obTitle').textContent = s.title;
+    document.getElementById('obDesc').textContent = s.desc;
+    document.getElementById('obTip').textContent = s.tip;
+    document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('active', i === obStep));
+    document.getElementById('obBtnPrev').style.display = obStep === 0 ? 'none' : '';
+    const nextBtn = document.getElementById('obBtnNext');
+    nextBtn.textContent = obStep === OB_STEPS.length - 1 ? 'Começar!' : 'Próximo';
+    nextBtn.setAttribute('aria-label', obStep === OB_STEPS.length - 1 ? 'Fechar guia e começar' : 'Próximo passo');
+}
+
+function obNext() {
+    if (obStep < OB_STEPS.length - 1) { obStep++; renderObStep(); }
+    else { closeOnboarding(); }
+}
+
+function obPrev() {
+    if (obStep > 0) { obStep--; renderObStep(); }
+}
+
+function closeOnboarding() {
+    document.getElementById('onboardingModal').classList.remove('open');
+    try { localStorage.setItem('geocollector-onboarding-done','1'); } catch(e) {}
+}
+
+function checkOnboarding() {
+    try {
+        const done = localStorage.getItem('geocollector-onboarding-done');
+        if (!done) setTimeout(showOnboarding, 800);
+    } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════
+//  TRACK LOG — Trilha GPS automática
+// ═══════════════════════════════════════════════════
+let trackLogActive = false;
+let trackLogWatchId = null;
+let trackLogPoints = []; // [{lat, lng, accuracy, timestamp, altitude}]
+let trackLogTimerInterval = null;
+let trackLogStartTime = null;
+let trackLogDistCache = 0; // metros acumulados
+
+function toggleTrackLog() {
+    if (trackLogActive) {
+        stopTrackLog();
+    } else {
+        startTrackLog();
+    }
+}
+
+function startTrackLog() {
+    if (!navigator.geolocation) { showToast('Geolocalização não suportada', 'error'); return; }
+    const interval = parseInt(document.getElementById('trackIntervalSelect').value) * 1000;
+    trackLogActive = true;
+    trackLogPoints = [];
+    trackLogDistCache = 0;
+    trackLogStartTime = Date.now();
+
+    const btn = document.getElementById('btnTrackLog');
+    btn.innerHTML = '<i class="fas fa-stop" aria-hidden="true" style="color:var(--danger)"></i> Parar Trilha';
+    btn.setAttribute('aria-label', 'Parar gravação de trilha');
+    btn.style.background = 'rgba(176,0,32,0.07)';
+    btn.style.borderColor = 'rgba(176,0,32,0.25)';
+
+    document.getElementById('trackLogPanel').classList.add('active');
+    showGPSStatus('searching', 'Trilha...');
+
+    // Timer display
+    trackLogTimerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - trackLogStartTime) / 1000);
+        const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const ss = String(elapsed % 60).padStart(2, '0');
+        document.getElementById('trackLogTimer').textContent = `${mm}:${ss}`;
+    }, 1000);
+
+    // Use setInterval for configurable interval (watchPosition fires too often)
+    let lastCapture = 0;
+    trackLogWatchId = navigator.geolocation.watchPosition(pos => {
+        const now = Date.now();
+        if (now - lastCapture < interval) return;
+        lastCapture = now;
+        const { latitude: lat, longitude: lng, accuracy, altitude } = pos.coords;
+        const pt = { lat, lng, accuracy, altitude, timestamp: new Date().toISOString() };
+        // Calc incremental distance
+        if (trackLogPoints.length > 0) {
+            const prev = trackLogPoints[trackLogPoints.length - 1];
+            trackLogDistCache += haversineDistance(prev.lat, prev.lng, lat, lng);
+        }
+        trackLogPoints.push(pt);
+        updateTrackLogUI(accuracy);
+        // Draw on map
+        if (map && currentTab === 'map') drawTrackLogOnMap();
+    }, err => { showToast('Erro trilha: ' + err.message, 'error'); },
+    { enableHighAccuracy: true, maximumAge: 0 });
+
+    showToast('Trilha iniciada — intervalo: ' + (interval/1000) + 's', 'info');
+}
+
+function stopTrackLog() {
+    trackLogActive = false;
+    if (trackLogWatchId) { navigator.geolocation.clearWatch(trackLogWatchId); trackLogWatchId = null; }
+    clearInterval(trackLogTimerInterval);
+    const btn = document.getElementById('btnTrackLog');
+    btn.innerHTML = '<i class="fas fa-route" aria-hidden="true"></i> Iniciar Trilha';
+    btn.setAttribute('aria-label', 'Iniciar gravação de trilha GPS');
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    showGPSStatus('active', 'GPS Ativo');
+    if (trackLogPoints.length > 0) {
+        showToast(`Trilha gravada: ${trackLogPoints.length} pontos, ${formatDist(trackLogDistCache)}`, 'success');
+    }
+}
+
+function clearTrackLog() {
+    if (trackLogActive) stopTrackLog();
+    trackLogPoints = [];
+    trackLogDistCache = 0;
+    document.getElementById('trackLogPanel').classList.remove('active');
+    document.getElementById('tlPoints').textContent = '0';
+    document.getElementById('tlDist').textContent = '0m';
+    document.getElementById('tlAcc').textContent = '--';
+    document.getElementById('trackLogTimer').textContent = '00:00';
+    if (map) drawTrackLogOnMap();
+    showToast('Trilha limpa', 'info');
+}
+
+function updateTrackLogUI(accuracy) {
+    document.getElementById('tlPoints').textContent = trackLogPoints.length;
+    document.getElementById('tlDist').textContent = formatDist(trackLogDistCache);
+    document.getElementById('tlAcc').textContent = Math.round(accuracy) + 'm';
+}
+
+let trackLogLayer = null;
+function drawTrackLogOnMap() {
+    if (!map) return;
+    if (trackLogLayer) { try { map.removeLayer(trackLogLayer); } catch(e) {} }
+    if (trackLogPoints.length < 2) return;
+    const latlngs = trackLogPoints.map(p => [p.lat, p.lng]);
+    trackLogLayer = L.polyline(latlngs, {
+        color: '#1565C0', weight: 3, opacity: 0.8,
+        dashArray: null
+    }).addTo(map);
+}
+
+function exportTrackLog(format) {
+    if (trackLogPoints.length < 2) { showToast('Grave pelo menos 2 pontos na trilha', 'error'); return; }
+    const ts = new Date().toISOString().split('T')[0];
+    const sessionLabel = currentSessionName.replace(/\s+/g, '-');
+    let content, mime, fname;
+
+    if (format === 'gpx') {
+        const trkpts = trackLogPoints.map(p =>
+            `    <trkpt lat="${p.lat.toFixed(7)}" lon="${p.lng.toFixed(7)}">\n` +
+            (p.altitude ? `      <ele>${p.altitude.toFixed(1)}</ele>\n` : '') +
+            `      <time>${p.timestamp}</time>\n` +
+            `      <extensions><accuracy>${p.accuracy.toFixed(1)}</accuracy></extensions>\n` +
+            `    </trkpt>`
+        ).join('\n');
+        content = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="GeoCollector UFT v5.0" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata>\n    <name>${currentSessionName}</name>\n    <desc>Trilha registrada pelo GeoCollector UFT — Campus Gurupi</desc>\n    <time>${new Date().toISOString()}</time>\n  </metadata>\n  <trk>\n    <name>${currentSessionName}</name>\n    <desc>Prof. Dsc. Jacinto Pereira Santos — UFT Agronomia/Eng.Florestal</desc>\n    <trkseg>\n${trkpts}\n    </trkseg>\n  </trk>\n</gpx>`;
+        mime = 'application/gpx+xml'; fname = `trilha-${sessionLabel}-${ts}.gpx`;
+    } else if (format === 'kml') {
+        const coords = trackLogPoints.map(p => `${p.lng},${p.lat},${p.altitude||0}`).join('\n            ');
+        content = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n  <name>Trilha — ${currentSessionName}</name>\n  <Style id="lineStyle"><LineStyle><color>ffC08000</color><width>3</width></LineStyle></Style>\n  <Placemark>\n    <name>Trilha de Caminhamento</name>\n    <description>Pontos: ${trackLogPoints.length} · Distância: ${formatDist(trackLogDistCache)} · UFT Gurupi</description>\n    <styleUrl>#lineStyle</styleUrl>\n    <LineString><tessellate>1</tessellate><coordinates>\n            ${coords}\n    </coordinates></LineString>\n  </Placemark>\n</Document>\n</kml>`;
+        mime = 'application/vnd.google-earth.kml+xml'; fname = `trilha-${sessionLabel}-${ts}.kml`;
+    } else {
+        const geojson = {
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                properties: { name: currentSessionName, points: trackLogPoints.length, distance_m: Math.round(trackLogDistCache), generated: new Date().toISOString(), institution: 'UFT Gurupi' },
+                geometry: { type: 'LineString', coordinates: trackLogPoints.map(p => [p.lng, p.lat, p.altitude||0]) }
+            }]
+        };
+        content = JSON.stringify(geojson, null, 2); mime = 'application/json'; fname = `trilha-${sessionLabel}-${ts}.geojson`;
+    }
+    downloadFile(content, mime, fname);
+    showToast(`Trilha exportada (${format.toUpperCase()})!`, 'success');
+}
+
+// ═══════════════════════════════════════════════════
+//  MEDIÇÃO DE DISTÂNCIA
+// ═══════════════════════════════════════════════════
+let distSelectedIds = [];
+let lastDistResult = null;
+
+function renderDistPointSelector() {
+    const container = document.getElementById('distPointSelector');
+    const list = document.getElementById('distPointList');
+    if (points.length === 0) { container.style.display = 'none'; return; }
+    container.style.display = 'block';
+    list.innerHTML = points.map(p => {
+        const sel = distSelectedIds.includes(p.id);
+        const coords = formatCoords(p);
+        return `<div onclick="toggleDistPoint(${p.id})" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--shape-sm);cursor:pointer;background:${sel?'rgba(21,101,192,0.08)':'var(--card-high)'};border:1px solid ${sel?'rgba(21,101,192,0.3)':'var(--border)'};margin-bottom:4px;transition:all 0.15s" role="checkbox" aria-checked="${sel}">
+            <div style="width:20px;height:20px;border-radius:4px;background:${sel?'var(--tertiary)':'var(--border)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                ${sel?'<i class="fas fa-check" aria-hidden="true" style="font-size:10px;color:#fff"></i>':''}
+            </div>
+            <div style="min-width:0">
+                <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+                <div style="font-size:10px;color:var(--muted);font-family:Fira Code,monospace">${coords.main}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleDistPoint(id) {
+    const idx = distSelectedIds.indexOf(id);
+    if (idx >= 0) distSelectedIds.splice(idx, 1);
+    else distSelectedIds.push(id);
+    renderDistPointSelector();
+}
+
+function measureDistanceFromSelected() {
+    // If none pre-selected via the inline list, show selector
+    if (distSelectedIds.length < 2) {
+        renderDistPointSelector();
+        showToast('Selecione ≥ 2 pontos abaixo para medir', 'info');
+        return;
+    }
+    const ordered = distSelectedIds.map(id => points.find(p => p.id === id)).filter(Boolean);
+    if (ordered.length < 2) { showToast('Pontos não encontrados', 'error'); return; }
+
+    let total = 0;
+    const segments = [];
+    for (let i = 0; i < ordered.length - 1; i++) {
+        const d = haversineDistance(ordered[i].lat, ordered[i].lng, ordered[i+1].lat, ordered[i+1].lng);
+        total += d;
+        segments.push({ from: ordered[i].name, to: ordered[i+1].name, dist: d });
+    }
+    lastDistResult = { total, segments, points: ordered };
+
+    // Display
+    const panel = document.getElementById('distancePanel');
+    panel.classList.add('visible');
+    document.getElementById('distTotalM').textContent = total.toFixed(1);
+    document.getElementById('distTotalKm').textContent = `(${(total/1000).toFixed(3)} km)`;
+    const segDiv = document.getElementById('distSegments');
+    segDiv.innerHTML = segments.map((s, i) =>
+        `<div class="dist-seg-row">
+            <span style="color:var(--muted)">Seg.${i+1}: ${s.from} → ${s.to}</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--tertiary)">${s.dist.toFixed(1)}m</span>
+        </div>`
+    ).join('');
+    showToast(`Distância total: ${formatDist(total)}`, 'success');
+}
+
+function clearDistanceMeasure() {
+    distSelectedIds = [];
+    lastDistResult = null;
+    document.getElementById('distancePanel').classList.remove('visible');
+    document.getElementById('distPointSelector').style.display = 'none';
+}
+
+function exportDistanceMeasure(format) {
+    if (!lastDistResult) { showToast('Realize uma medição primeiro', 'error'); return; }
+    const ts = new Date().toISOString().split('T')[0];
+    const { total, segments, points: pts } = lastDistResult;
+    let content, mime, fname;
+    if (format === 'txt') {
+        const lines = [
+            'MEDIÇÃO DE DISTÂNCIA — GeoCollector UFT v5.0',
+            '='.repeat(50),
+            `Sessão: ${currentSessionName}`,
+            `Data: ${new Date().toLocaleString('pt-BR')}`,
+            `Total de pontos: ${pts.length}`,
+            '',
+            `DISTÂNCIA TOTAL: ${total.toFixed(2)} m  (${(total/1000).toFixed(4)} km)`,
+            '',
+            'SEGMENTOS',
+            '-'.repeat(40),
+            ...segments.map((s,i)=>`${i+1}. ${s.from} → ${s.to}: ${s.dist.toFixed(2)} m`),
+            '',
+            'VÉRTICES (ordem de medição)',
+            '-'.repeat(40),
+            ...pts.map((p,i)=>`${i+1}. ${p.name} | Lat:${p.lat.toFixed(6)} Lng:${p.lng.toFixed(6)} | ±${Math.round(p.accuracy)}m`),
+            '',
+            'UFT · Agronomia · Engenharia Florestal · Gurupi',
+            'Prof. Dsc. Jacinto Pereira Santos'
+        ];
+        content = lines.join('\n'); mime = 'text/plain'; fname = `medicao-dist-${ts}.txt`;
+    } else {
+        const rows = [['Segmento','De','Para','Distancia_m']];
+        segments.forEach((s,i) => rows.push([i+1, s.from, s.to, s.dist.toFixed(2)]));
+        rows.push(['TOTAL','','',total.toFixed(2)]);
+        content = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+        mime = 'text/csv'; fname = `medicao-dist-${ts}.csv`;
+    }
+    downloadFile(content, mime, fname);
+    showToast(`Exportado como ${format.toUpperCase()}!`, 'success');
+}
+
+function shareDistanceMeasure() {
+    if (!lastDistResult) { showToast('Realize uma medição primeiro', 'error'); return; }
+    const { total, segments } = lastDistResult;
+    const lines = [
+        `📏 *Medição de Distância — GeoCollector UFT*`,
+        `🗓 ${new Date().toLocaleString('pt-BR')}`,
+        ``,
+        `*Distância Total: ${formatDist(total)}*`,
+        ``,
+        ...segments.map((s,i)=>`${i+1}. ${s.from} → ${s.to}: ${s.dist.toFixed(1)}m`),
+        ``,
+        `---`,
+        `UFT · Agronomia · Eng. Florestal · Gurupi`
+    ];
+    window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+}
+
+// ═══════════════════════════════════════════════════
+//  HAVERSINE — distância entre dois pontos (m)
+// ═══════════════════════════════════════════════════
+function haversineDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000; // metros
+    const toRad = x => x * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function formatDist(m) {
+    if (m >= 1000) return (m/1000).toFixed(2) + ' km';
+    return Math.round(m) + ' m';
+}
+
+
 function applyTheme(theme){
     const html=document.documentElement;
     const icon=document.getElementById('themeIcon');
