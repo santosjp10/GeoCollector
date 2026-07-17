@@ -213,13 +213,14 @@
         @media (min-width:640px){ .ws-screen{height:70vh;min-height:520px;} }
 
         /* ═══ MAPA DA ABA CAPTURAR ═══ */
-        .cap-map-stage { position:relative;height:38vh;min-height:240px;border-radius:var(--shape-xl);overflow:hidden;border:1px solid var(--border);margin:0 -0px; }
-        .cap-map-inner { width:100%;height:100%; }
-        .cap-basemap-switch { position:absolute;bottom:12px;left:12px;z-index:20;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--shape-md);box-shadow:var(--elev-2);padding:4px;gap:4px; }
+        .cap-map-full { position:absolute;inset:0;width:100%;height:100%; }
+        .cap-basemap-switch { position:absolute;top:12px;left:12px;z-index:20;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--shape-md);box-shadow:var(--elev-2);padding:4px;gap:4px; }
         .cap-basemap-btn { border:none;background:transparent;color:var(--muted);width:32px;height:32px;border-radius:var(--shape-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px; }
         .cap-basemap-btn.active { background:var(--primary);color:var(--on-primary); }
-        .cap-map-fab { position:absolute;bottom:16px;right:16px;z-index:20;width:54px;height:54px;border-radius:50%;background:var(--primary);color:var(--on-primary);border:none;box-shadow:var(--elev-3);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
+        .cap-map-fab { position:absolute;bottom:16px;right:16px;z-index:24;width:60px;height:60px;border-radius:50%;background:var(--primary);color:var(--on-primary);border:none;box-shadow:var(--elev-3);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
         .cap-map-fab:disabled { opacity:0.6; }
+        .ws-panel-fab-left { left:16px;right:auto; }
+        #capFloatingPanel { right:84px; }
 
         /* IMPORT DROP ZONE */
         .import-drop-zone { border:2px dashed var(--border);border-radius:var(--shape-xl);padding:28px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--card-high); }
@@ -522,10 +523,9 @@
     <div class="content-area">
 
         <!-- ══ SCREEN 1: CAPTURAR ══ -->
-        <div class="screen active" id="screen-capture">
-
-            <div class="cap-map-stage">
-                <div id="mapCapture" class="cap-map-inner"></div>
+        <div class="screen active ws-screen" id="screen-capture">
+            <div class="ws-map-stage">
+                <div id="mapCapture" class="cap-map-full"></div>
 
                 <div class="ws-mode-switch" role="tablist" aria-label="Tipo de captura">
                     <button class="ws-mode-btn active" id="capTypeBtnPoint" onclick="setCaptureType('point')" role="tab" aria-selected="true">
@@ -543,216 +543,90 @@
                     <button class="cap-basemap-btn active" data-basemap="streets" onclick="setCaptureBasemap('streets')" title="Ruas" aria-label="Mapa de ruas"><i class="fas fa-road" aria-hidden="true"></i></button>
                     <button class="cap-basemap-btn" data-basemap="satellite" onclick="setCaptureBasemap('satellite')" title="Satélite" aria-label="Mapa de satélite"><i class="fas fa-satellite" aria-hidden="true"></i></button>
                     <button class="cap-basemap-btn" data-basemap="hybrid" onclick="setCaptureBasemap('hybrid')" title="Híbrido" aria-label="Mapa híbrido"><i class="fas fa-layer-group" aria-hidden="true"></i></button>
+                    <button class="cap-basemap-btn" data-basemap="terrain" onclick="setCaptureBasemap('terrain')" title="Topográfico" aria-label="Mapa topográfico"><i class="fas fa-mountain" aria-hidden="true"></i></button>
                 </div>
+
+                <button id="capLocateBtn" onclick="locateOnCaptureMap()" class="ws-map-icon-btn" title="Minha localização" aria-label="Centralizar mapa na minha posição atual">
+                    <i class="fas fa-location-arrow" aria-hidden="true"></i>
+                </button>
+
+                <button class="ws-panel-fab ws-panel-fab-left" id="capPanelFab" onclick="capOpenPanel()" style="display:none" aria-label="Abrir painel de dados da captura">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                </button>
 
                 <button id="capMapFab" onclick="captureLocation()" class="cap-map-fab" aria-label="Capturar localização GPS atual">
                     <i class="fas fa-crosshairs" aria-hidden="true"></i>
                 </button>
             </div>
 
-            <div id="lineStatsBox" class="card" style="display:none;margin-top:12px;padding:14px"></div>
+            <!-- PAINEL FLUTUANTE DE DADOS DA CAPTURA -->
+            <div class="ws-floating-panel" id="capFloatingPanel">
+                <div class="ws-panel-handle" onclick="capMinimizePanel()" role="button" aria-label="Minimizar painel">
+                    <div class="ws-handle-bar" aria-hidden="true"></div>
+                    <span>Minimizar painel</span>
+                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                </div>
+                <div class="ws-panel-body">
 
-            <p class="section-label" style="margin-top:14px">Status GPS</p>
-
-            <div id="gpsMonitor" class="gps-monitor" style="display:none">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                    <div style="display:flex;align-items:center;gap:10px">
-                        <div class="live-dot"></div>
-                        <span style="font-size:14px;font-weight:800;color:var(--accent)">GPS em Tempo Real</span>
+                    <div class="btn-group" style="margin:12px 0 4px">
+                        <button id="btnTrack" onclick="startTracking()" class="btn btn-ghost btn-sm" aria-label="Iniciar rastreamento automático de pontos">
+                            <i class="fas fa-play" style="color:var(--accent)" aria-hidden="true"></i> Rastrear
+                        </button>
+                        <button onclick="clearAllPoints()" class="btn btn-danger-ghost btn-sm" aria-label="Limpar todos os pontos coletados">
+                            <i class="fas fa-trash-alt" aria-hidden="true"></i> Limpar Tudo
+                        </button>
                     </div>
-                    <button onclick="stopGPSMonitoring()" class="btn btn-ghost btn-sm" style="width:auto;padding:7px 14px;font-size:12px">
-                        <i class="fas fa-pause"></i> Pausar
-                    </button>
-                </div>
-                <div class="stats-row" style="margin-bottom:14px">
-                    <div class="stat-box"><div id="liveAccuracy" class="stat-value" style="font-size:20px">--</div><div class="stat-label">Precisão (m)</div></div>
-                    <div class="stat-box"><div id="liveSatellites" class="stat-value" style="font-size:20px">--</div><div class="stat-label">Satélites</div></div>
-                    <div class="stat-box" id="accQuality"><div class="stat-value" style="font-size:20px">--</div><div class="stat-label">Qualidade</div></div>
-                </div>
-                <div>
-                    <div class="coord-row"><span class="coord-label">Latitude</span><span id="liveLat" class="coord-val">--</span></div>
-                    <div class="coord-row"><span class="coord-label">Longitude</span><span id="liveLng" class="coord-val">--</span></div>
-                    <div class="coord-row" id="liveUtmRow" style="display:none"><span class="coord-label">UTM (X, Y)</span><span id="liveUtm" class="coord-val" style="color:var(--accent)">--</span></div>
-                    <div class="coord-row" style="border:none"><span class="coord-label" id="accTip" style="font-size:11px">Iniciando...</span></div>
-                </div>
-            </div>
 
-            <div id="startMonBtn">
-                <button onclick="startGPSMonitoring()" class="btn btn-ghost" style="border-style:dashed;color:var(--muted);gap:10px">
-                    <i class="fas fa-satellite" style="color:var(--primary)"></i> Iniciar Monitoramento GPS
-                </button>
-            </div>
-
-            <div class="card" style="margin-top:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px" id="precisionLockMini">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0">
-                    <i class="fas fa-lock-open" id="plbMiniIcon" style="color:var(--muted)"></i>
-                    <div style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trava de Precisão: <span id="plbStatusMini" style="color:var(--text)">Aguardando GPS</span></div>
-                </div>
-                <button class="icon-btn" onclick="switchTab('settings')" title="Configurar em Configurações" style="flex-shrink:0"><i class="fas fa-sliders-h"></i></button>
-            </div>
-
-            <p class="section-label" style="margin-top:4px">Coordenadas</p>
-            <div class="card">
-                <div class="card-header" style="margin-bottom:12px">
-                    <span class="card-title">Sistema de Coordenadas</span>
-                    <span id="zoneBadge" class="badge badge-yellow" style="display:none">Zona 22S</span>
-                </div>
-                <div class="coord-selector">
-                    <div class="coord-option active" id="optGeo" onclick="setCoordSystem('geographic')">
-                        <i class="fas fa-globe" style="color:var(--primary)"></i>
-                        <div class="co-name">Geográficas</div><div class="co-sub">Lat / Long</div>
-                    </div>
-                    <div class="coord-option" id="optUtm" onclick="setCoordSystem('utm')">
-                        <i class="fas fa-map" style="color:var(--muted)"></i>
-                        <div class="co-name">UTM</div><div class="co-sub">X / Y (m)</div>
-                    </div>
-                </div>
-                <div id="utmZoneWrap" style="display:none;margin-top:12px">
-                    <label class="field-label">Zona UTM</label>
-                    <select id="utmZoneSelect" onchange="updateUTMZone()" class="utm-select">
-                        <option value="22">Zona 22S — Tocantins / Pará</option>
-                        <option value="23">Zona 23S — Maranhão / Piauí</option>
-                        <option value="21">Zona 21S — Goiás / MT</option>
-                        <option value="24">Zona 24S — Bahia</option>
-                    </select>
-                </div>
-            </div>
-
-            <p class="section-label">Captura</p>
-            <div class="capture-hero-card">
-                <button id="btnCapture" onclick="captureLocation()" class="btn btn-fab-large" style="margin-bottom:14px" aria-label="Capturar localização GPS atual">
-                    <i class="fas fa-crosshairs" style="font-size:20px" aria-hidden="true"></i> Capturar Localização
-                </button>
-                <div class="btn-group">
-                    <button id="btnTrack" onclick="startTracking()" class="btn btn-ghost btn-sm" aria-label="Iniciar rastreamento automático de pontos">
-                        <i class="fas fa-play" style="color:var(--accent)" aria-hidden="true"></i> Rastrear
-                    </button>
-                    <button onclick="clearAllPoints()" class="btn btn-danger-ghost btn-sm" aria-label="Limpar todos os pontos coletados">
-                        <i class="fas fa-trash-alt" aria-hidden="true"></i> Limpar Tudo
-                    </button>
-                </div>
-                <div class="stats-row" style="margin-top:14px">
-                    <div class="stat-box"><div id="countPoints" class="stat-value">0</div><div class="stat-label">Pontos</div></div>
-                    <div class="stat-box"><div id="currentAccuracy" class="stat-value" style="font-size:18px">--</div><div class="stat-label">Precisão</div></div>
-                    <div class="stat-box"><div id="lastUpdate" class="stat-value" style="font-size:16px">--:--</div><div class="stat-label">Último</div></div>
-                </div>
-            </div>
-
-            <!-- ══ TRACK LOG PANEL ══ -->
-            <p class="section-label" style="margin-top:4px">
-                <i class="fas fa-route" aria-hidden="true" style="color:var(--tertiary)"></i> Track Log — Trilha
-            </p>
-            <div class="card" style="padding:14px;margin-bottom:12px">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                    <div>
-                        <div style="font-size:13px;font-weight:800">Rastreamento de Trilha</div>
-                        <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500">Registra posição em intervalo configurável</div>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px">
-                        <label class="field-label" style="margin:0;font-size:11px">Intervalo:</label>
-                        <select id="trackIntervalSelect" class="utm-select" style="padding:6px 8px;font-size:12px;width:auto" aria-label="Intervalo de gravação da trilha em segundos">
-                            <option value="3">3s</option>
-                            <option value="5" selected>5s</option>
-                            <option value="10">10s</option>
-                            <option value="30">30s</option>
-                            <option value="60">1min</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="btn-group" style="margin-bottom:0">
-                    <button id="btnTrackLog" onclick="toggleTrackLog()" class="btn btn-tonal btn-sm" aria-label="Iniciar gravação de trilha GPS">
-                        <i class="fas fa-route" aria-hidden="true"></i> Iniciar Trilha
-                    </button>
-                    <button onclick="clearTrackLog()" class="btn btn-ghost btn-sm" aria-label="Limpar trilha gravada">
-                        <i class="fas fa-trash-alt" aria-hidden="true"></i> Limpar Trilha
-                    </button>
-                </div>
-                <!-- Painel de info da trilha ativa -->
-                <div id="trackLogPanel" class="tracklog-panel" aria-live="polite">
-                    <div class="tracklog-header">
-                        <div class="tracklog-badge">
-                            <div class="track-dot" aria-hidden="true"></div>
-                            <span>Gravando trilha...</span>
+                    <!-- INFO AUTOMÁTICA POR TIPO DE CAPTURA -->
+                    <div id="capInfoPoint">
+                        <div class="section-label" style="padding:12px 0 8px"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> Último ponto capturado</div>
+                        <div id="capLastPointCard" class="card" style="padding:14px">
+                            <div class="empty-state" style="padding:10px 4px"><i class="fas fa-map-marker-alt"></i><p style="margin:6px 0 0">Nenhum ponto capturado</p><small>Toque no botão flutuante do mapa para capturar</small></div>
                         </div>
-                        <span id="trackLogTimer" style="font-size:12px;font-family:'Fira Code',monospace;color:var(--muted)">00:00</span>
+                        <div class="stats-row" style="margin-top:10px">
+                            <div class="stat-box"><div id="countPoints" class="stat-value">0</div><div class="stat-label">Pontos</div></div>
+                            <div class="stat-box"><div id="currentAccuracy" class="stat-value" style="font-size:18px">--</div><div class="stat-label">Precisão</div></div>
+                            <div class="stat-box"><div id="lastUpdate" class="stat-value" style="font-size:16px">--:--</div><div class="stat-label">Último</div></div>
+                        </div>
                     </div>
-                    <div class="tracklog-stats">
-                        <div class="tracklog-stat"><div id="tlPoints" class="tracklog-stat-val">0</div><div class="tracklog-stat-lbl">Pontos</div></div>
-                        <div class="tracklog-stat"><div id="tlDist" class="tracklog-stat-val">0m</div><div class="tracklog-stat-lbl">Distância</div></div>
-                        <div class="tracklog-stat"><div id="tlAcc" class="tracklog-stat-val">--</div><div class="tracklog-stat-lbl">Precisão</div></div>
-                    </div>
-                    <div class="tracklog-export-row">
-                        <div class="tracklog-export-btn" onclick="exportTrackLog('gpx')" role="button" aria-label="Exportar trilha em formato GPX"><i class="fas fa-route" aria-hidden="true" style="font-size:18px;color:var(--tertiary)"></i>GPX</div>
-                        <div class="tracklog-export-btn" onclick="exportTrackLog('kml')" role="button" aria-label="Exportar trilha em formato KML"><i class="fas fa-globe" aria-hidden="true" style="font-size:18px;color:var(--warn)"></i>KML</div>
-                        <div class="tracklog-export-btn" onclick="exportTrackLog('geojson')" role="button" aria-label="Exportar trilha em formato GeoJSON"><i class="fas fa-file-code" aria-hidden="true" style="font-size:18px;color:var(--primary)"></i>GeoJSON</div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- ══ DISTANCE MEASUREMENT ══ -->
-            <p class="section-label" style="margin-top:4px">
-                <i class="fas fa-ruler-horizontal" aria-hidden="true" style="color:var(--tertiary)"></i> Medição de Distância
-            </p>
-            <div class="card" style="padding:14px;margin-bottom:12px">
-                <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500;line-height:1.5">
-                    Selecione ≥ 2 pontos da lista para medir distâncias lineares entre eles (transecto, perfil).
-                </div>
-                <div class="btn-group" style="margin-bottom:10px">
-                    <button onclick="measureDistanceFromSelected()" class="btn btn-ghost btn-sm" aria-label="Calcular distância entre pontos selecionados">
-                        <i class="fas fa-ruler-combined" aria-hidden="true"></i> Medir Selecionados
-                    </button>
-                    <button onclick="clearDistanceMeasure()" class="btn btn-ghost btn-sm" aria-label="Limpar medição de distância">
-                        <i class="fas fa-undo" aria-hidden="true"></i> Limpar
-                    </button>
-                </div>
-                <div id="distancePanel" class="distance-panel" aria-live="polite">
-                    <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Distância Total</div>
-                    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
-                        <div id="distTotalM" class="dist-result-big">--</div>
-                        <div style="font-size:14px;color:var(--muted);font-weight:600">m</div>
-                        <div id="distTotalKm" style="font-size:14px;color:var(--muted);font-weight:600">(-- km)</div>
+                    <div id="capInfoLine" style="display:none">
+                        <div id="lineStatsBox" class="card" style="padding:14px;margin-top:12px"></div>
                     </div>
-                    <div id="distSegments" class="dist-segs"></div>
-                    <div style="display:flex;gap:8px;margin-top:10px">
-                        <div class="tracklog-export-btn" onclick="exportDistanceMeasure('txt')" role="button" aria-label="Exportar medição como texto"><i class="fas fa-file-alt" aria-hidden="true" style="font-size:16px;color:var(--muted)"></i>TXT</div>
-                        <div class="tracklog-export-btn" onclick="exportDistanceMeasure('csv')" role="button" aria-label="Exportar medição como CSV"><i class="fas fa-file-csv" aria-hidden="true" style="font-size:16px;color:var(--accent)"></i>CSV</div>
-                        <div class="tracklog-export-btn" onclick="shareDistanceMeasure()" role="button" aria-label="Compartilhar medição via WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true" style="font-size:16px;color:#25D366"></i>WhatsApp</div>
-                    </div>
-                </div>
-                <!-- Seleção rápida de pontos para distância -->
-                <div style="margin-top:8px">
-                    <div id="distPointSelector" style="display:none">
-                        <div class="section-label" style="padding:0;margin-bottom:6px;font-size:10px">Selecionar pontos para medir:</div>
-                        <div id="distPointList" style="max-height:160px;overflow-y:auto"></div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- IMPORTAR CAMADA -->
-            <p class="section-label">Importar Camada</p>
-            <div class="import-drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()"
-                 ondragover="event.preventDefault();this.classList.add('drag-over')"
-                 ondragleave="this.classList.remove('drag-over')"
-                 ondrop="handleImportDrop(event)">
-                <i class="fas fa-file-import"></i>
-                <p>Importar KML / GeoJSON</p>
-                <small>Toque para selecionar ou arraste o arquivo</small>
-            </div>
-            <input type="file" id="importFileInput" accept=".kml,.geojson,.json" style="display:none" onchange="handleImportFile(this)">
-            <div id="importLayerInfo" style="display:none;margin-top:-4px;margin-bottom:12px" class="card">
-                <div style="display:flex;align-items:center;justify-content:space-between">
-                    <div style="display:flex;align-items:center;gap:10px">
-                        <i class="fas fa-layer-group" style="color:var(--tertiary);font-size:18px"></i>
+                    <div id="capInfoPolygon" style="display:none">
+                        <div id="polygonStatsBox" class="card" style="padding:14px;margin-top:12px"></div>
+                    </div>
+
+                    <p class="section-label" style="margin-top:16px">Status GPS <span style="font-weight:500;color:var(--muted);font-size:9px;text-transform:none">(automático)</span></p>
+                    <div id="gpsMonitor" class="gps-monitor">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                            <div class="live-dot"></div>
+                            <span style="font-size:14px;font-weight:800;color:var(--accent)">GPS em Tempo Real</span>
+                        </div>
                         <div>
-                            <div id="importLayerName" style="font-size:13px;font-weight:700">Camada importada</div>
-                            <div id="importLayerMeta" style="font-size:11px;color:var(--muted)">0 feições</div>
+                            <div class="coord-row"><span class="coord-label">Geográficas</span><span class="coord-val"><span id="liveLat">--</span>, <span id="liveLng">--</span></span></div>
+                            <div class="coord-row"><span class="coord-label">UTM (X, Y)</span><span id="liveUtm" class="coord-val" style="color:var(--accent)">--</span></div>
                         </div>
+                        <div class="stats-row" style="margin:14px 0">
+                            <div class="stat-box"><div id="liveAccuracy" class="stat-value" style="font-size:20px">--</div><div class="stat-label">Precisão (m)</div></div>
+                            <div class="stat-box"><div id="liveSatellites" class="stat-value" style="font-size:20px">--</div><div class="stat-label">Satélites</div></div>
+                            <div class="stat-box" id="accQuality"><div class="stat-value" style="font-size:20px">--</div><div class="stat-label">Qualidade</div></div>
+                        </div>
+                        <div class="coord-row" style="border:none"><span class="coord-label" id="accTip" style="font-size:11px">Iniciando...</span></div>
                     </div>
-                    <button onclick="removeImportedLayer()" class="icon-btn del"><i class="fas fa-times"></i></button>
+
+                    <div class="card" style="margin-top:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px" id="precisionLockMini">
+                        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                            <i class="fas fa-lock-open" id="plbMiniIcon" style="color:var(--muted)"></i>
+                            <div style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trava de Precisão: <span id="plbStatusMini" style="color:var(--text)">Aguardando GPS</span></div>
+                        </div>
+                        <button class="icon-btn" onclick="switchTab('settings')" title="Configurar em Configurações" style="flex-shrink:0"><i class="fas fa-sliders-h"></i></button>
+                    </div>
+
+                    <div style="padding-bottom:12px"></div>
                 </div>
             </div>
-
-            <div style="padding-bottom:12px"></div>
         </div>
 
         <!-- ══ SCREEN 2+3: ÁREA DE TRABALHO (Mapa + Área unificados) ══ -->
@@ -933,6 +807,120 @@
                 <div id="chartGPS" class="bar-chart"></div>
             </div>
 
+            <!-- IMPORTAR CAMADA (movido da aba Capturar) -->
+            <p class="section-label" style="margin-top:4px">Importar Camada</p>
+            <div class="import-drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="handleImportDrop(event)">
+                <i class="fas fa-file-import"></i>
+                <p>Importar KML / GeoJSON</p>
+                <small>Toque para selecionar ou arraste o arquivo</small>
+            </div>
+            <input type="file" id="importFileInput" accept=".kml,.geojson,.json" style="display:none" onchange="handleImportFile(this)">
+            <div id="importLayerInfo" style="display:none;margin-top:-4px;margin-bottom:12px" class="card">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <i class="fas fa-layer-group" style="color:var(--tertiary);font-size:18px"></i>
+                        <div>
+                            <div id="importLayerName" style="font-size:13px;font-weight:700">Camada importada</div>
+                            <div id="importLayerMeta" style="font-size:11px;color:var(--muted)">0 feições</div>
+                        </div>
+                    </div>
+                    <button onclick="removeImportedLayer()" class="icon-btn del"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <!-- TRACK LOG — TRILHA (movido da aba Capturar) -->
+            <p class="section-label" style="margin-top:4px">
+                <i class="fas fa-route" aria-hidden="true" style="color:var(--tertiary)"></i> Track Log — Trilha
+            </p>
+            <div class="card" style="padding:14px;margin-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                    <div>
+                        <div style="font-size:13px;font-weight:800">Rastreamento de Trilha</div>
+                        <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500">Registra posição em intervalo configurável</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px">
+                        <label class="field-label" style="margin:0;font-size:11px">Intervalo:</label>
+                        <select id="trackIntervalSelect" class="utm-select" style="padding:6px 8px;font-size:12px;width:auto" aria-label="Intervalo de gravação da trilha em segundos">
+                            <option value="3">3s</option>
+                            <option value="5" selected>5s</option>
+                            <option value="10">10s</option>
+                            <option value="30">30s</option>
+                            <option value="60">1min</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-bottom:0">
+                    <button id="btnTrackLog" onclick="toggleTrackLog()" class="btn btn-tonal btn-sm" aria-label="Iniciar gravação de trilha GPS">
+                        <i class="fas fa-route" aria-hidden="true"></i> Iniciar Trilha
+                    </button>
+                    <button onclick="clearTrackLog()" class="btn btn-ghost btn-sm" aria-label="Limpar trilha gravada">
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i> Limpar Trilha
+                    </button>
+                </div>
+                <!-- Painel de info da trilha ativa -->
+                <div id="trackLogPanel" class="tracklog-panel" aria-live="polite">
+                    <div class="tracklog-header">
+                        <div class="tracklog-badge">
+                            <div class="track-dot" aria-hidden="true"></div>
+                            <span>Gravando trilha...</span>
+                        </div>
+                        <span id="trackLogTimer" style="font-size:12px;font-family:'Fira Code',monospace;color:var(--muted)">00:00</span>
+                    </div>
+                    <div class="tracklog-stats">
+                        <div class="tracklog-stat"><div id="tlPoints" class="tracklog-stat-val">0</div><div class="tracklog-stat-lbl">Pontos</div></div>
+                        <div class="tracklog-stat"><div id="tlDist" class="tracklog-stat-val">0m</div><div class="tracklog-stat-lbl">Distância</div></div>
+                        <div class="tracklog-stat"><div id="tlAcc" class="tracklog-stat-val">--</div><div class="tracklog-stat-lbl">Precisão</div></div>
+                    </div>
+                    <div class="tracklog-export-row">
+                        <div class="tracklog-export-btn" onclick="exportTrackLog('gpx')" role="button" aria-label="Exportar trilha em formato GPX"><i class="fas fa-route" aria-hidden="true" style="font-size:18px;color:var(--tertiary)"></i>GPX</div>
+                        <div class="tracklog-export-btn" onclick="exportTrackLog('kml')" role="button" aria-label="Exportar trilha em formato KML"><i class="fas fa-globe" aria-hidden="true" style="font-size:18px;color:var(--warn)"></i>KML</div>
+                        <div class="tracklog-export-btn" onclick="exportTrackLog('geojson')" role="button" aria-label="Exportar trilha em formato GeoJSON"><i class="fas fa-file-code" aria-hidden="true" style="font-size:18px;color:var(--primary)"></i>GeoJSON</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MEDIÇÃO DE DISTÂNCIA (movido da aba Capturar) -->
+            <p class="section-label" style="margin-top:4px">
+                <i class="fas fa-ruler-horizontal" aria-hidden="true" style="color:var(--tertiary)"></i> Medição de Distância
+            </p>
+            <div class="card" style="padding:14px;margin-bottom:12px">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500;line-height:1.5">
+                    Selecione ≥ 2 pontos da lista para medir distâncias lineares entre eles (transecto, perfil).
+                </div>
+                <div class="btn-group" style="margin-bottom:10px">
+                    <button onclick="measureDistanceFromSelected()" class="btn btn-ghost btn-sm" aria-label="Calcular distância entre pontos selecionados">
+                        <i class="fas fa-ruler-combined" aria-hidden="true"></i> Medir Selecionados
+                    </button>
+                    <button onclick="clearDistanceMeasure()" class="btn btn-ghost btn-sm" aria-label="Limpar medição de distância">
+                        <i class="fas fa-undo" aria-hidden="true"></i> Limpar
+                    </button>
+                </div>
+                <div id="distancePanel" class="distance-panel" aria-live="polite">
+                    <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Distância Total</div>
+                    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+                        <div id="distTotalM" class="dist-result-big">--</div>
+                        <div style="font-size:14px;color:var(--muted);font-weight:600">m</div>
+                        <div id="distTotalKm" style="font-size:14px;color:var(--muted);font-weight:600">(-- km)</div>
+                    </div>
+                    <div id="distSegments" class="dist-segs"></div>
+                    <div style="display:flex;gap:8px;margin-top:10px">
+                        <div class="tracklog-export-btn" onclick="exportDistanceMeasure('txt')" role="button" aria-label="Exportar medição como texto"><i class="fas fa-file-alt" aria-hidden="true" style="font-size:16px;color:var(--muted)"></i>TXT</div>
+                        <div class="tracklog-export-btn" onclick="exportDistanceMeasure('csv')" role="button" aria-label="Exportar medição como CSV"><i class="fas fa-file-csv" aria-hidden="true" style="font-size:16px;color:var(--accent)"></i>CSV</div>
+                        <div class="tracklog-export-btn" onclick="shareDistanceMeasure()" role="button" aria-label="Compartilhar medição via WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true" style="font-size:16px;color:#25D366"></i>WhatsApp</div>
+                    </div>
+                </div>
+                <!-- Seleção rápida de pontos para distância -->
+                <div style="margin-top:8px">
+                    <div id="distPointSelector" style="display:none">
+                        <div class="section-label" style="padding:0;margin-bottom:6px;font-size:10px">Selecionar pontos para medir:</div>
+                        <div id="distPointList" style="max-height:160px;overflow-y:auto"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- COMPARTILHAR E EXPORTAR (movido da aba Capturar) -->
             <p class="section-label" style="margin-top:4px">Compartilhar e Exportar</p>
             <div class="share-grid">
@@ -1044,20 +1032,30 @@
                 </div>
             </div>
 
-            <p class="section-label">Sistema de Coordenadas Padrão</p>
+            <p class="section-label">Sistema de Coordenadas</p>
             <div class="card" style="padding:14px">
-                <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500;line-height:1.5">
-                    Define como as coordenadas são exibidas na aba Capturar. Também pode ser alterado por lá.
+                <div class="card-header" style="margin-bottom:12px">
+                    <span class="card-title" style="font-size:12px;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">Usado na Captura, listas e exportações</span>
+                    <span id="zoneBadge" class="badge badge-yellow" style="display:none">Zona 22S</span>
                 </div>
                 <div class="coord-selector">
-                    <div class="coord-option" id="optGeoSettings" onclick="setCoordSystem('geographic')">
+                    <div class="coord-option active" id="optGeo" onclick="setCoordSystem('geographic')">
                         <i class="fas fa-globe" style="color:var(--primary)"></i>
                         <div class="co-name">Geográficas</div><div class="co-sub">Lat / Long</div>
                     </div>
-                    <div class="coord-option" id="optUtmSettings" onclick="setCoordSystem('utm')">
+                    <div class="coord-option" id="optUtm" onclick="setCoordSystem('utm')">
                         <i class="fas fa-map" style="color:var(--muted)"></i>
                         <div class="co-name">UTM</div><div class="co-sub">X / Y (m)</div>
                     </div>
+                </div>
+                <div id="utmZoneWrap" style="display:none;margin-top:12px">
+                    <label class="field-label">Zona UTM</label>
+                    <select id="utmZoneSelect" onchange="updateUTMZone()" class="utm-select">
+                        <option value="22">Zona 22S — Tocantins / Pará</option>
+                        <option value="23">Zona 23S — Maranhão / Piauí</option>
+                        <option value="21">Zona 21S — Goiás / MT</option>
+                        <option value="24">Zona 24S — Bahia</option>
+                    </select>
                 </div>
             </div>
 
@@ -1425,7 +1423,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initMap();
     initCaptureMap();
     renderAll();
-    checkGPSPermission();
+    startGPSMonitoring();
     updateCoordUI();
     updateSessionDisplay();
     renderSessionsList();
@@ -1593,24 +1591,21 @@ function checkGPSPermission() {
 }
 
 function startGPSMonitoring() {
-    if(!navigator.geolocation){showToast('Geolocalização não suportada','error');return;}
+    if(!navigator.geolocation){showGPSStatus('inactive','Sem suporte');showToast('Geolocalização não suportada','error');return;}
     isMonitoring=true;
-    document.getElementById('startMonBtn').style.display='none';
-    document.getElementById('gpsMonitor').style.display='block';
     showGPSStatus('searching','Monitorando...');
     gpsWatchId = navigator.geolocation.watchPosition(pos=>{
         updateLiveDisplay(pos);
         updatePrecisionLockBar(pos.coords.accuracy);
     }, err=>{
         document.getElementById('accTip').textContent='Erro: '+err.message;
+        showGPSStatus('inactive','Permissão negada');
     }, {enableHighAccuracy:true, timeout:5000, maximumAge:0});
 }
 
 function stopGPSMonitoring() {
     isMonitoring=false;
     if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}
-    document.getElementById('startMonBtn').style.display='block';
-    document.getElementById('gpsMonitor').style.display='none';
     showGPSStatus('active','GPS Ativo');
     updatePrecisionLockBar(null);
 }
@@ -1632,8 +1627,8 @@ function updateLiveDisplay(position) {
     let sats=position.coords.satellites||null;
     if(!sats&&accuracy<3)sats='12+';else if(!sats&&accuracy<6)sats='8-11';else if(!sats&&accuracy<10)sats='5-7';else if(!sats)sats='<5';
     document.getElementById('liveSatellites').textContent=sats;
-    if(coordSystem==='utm'){const utm=toUTM(lat,lng,utmZone);if(utm){document.getElementById('liveUtmRow').style.display='flex';document.getElementById('liveUtm').textContent=`${Math.round(utm.x)}, ${Math.round(utm.y)}`;}}
-    else document.getElementById('liveUtmRow').style.display='none';
+    const utm=toUTM(lat,lng,utmZone);
+    document.getElementById('liveUtm').textContent = utm ? `${Math.round(utm.x)}, ${Math.round(utm.y)}` : '--';
     updateCaptureMapPosition(lat,lng);
 }
 
@@ -1646,14 +1641,14 @@ function updatePrecisionLockBar(accuracy) {
     const status = document.getElementById('plbStatus');
     const statusMini = document.getElementById('plbStatusMini');
     const iconMini = document.getElementById('plbMiniIcon');
-    const btn = document.getElementById('btnCapture');
+    const btn = document.getElementById('capMapFab');
     if (accuracy === null) {
         bar.className = 'precision-lock-bar no-gps';
         bar.querySelector('.plb-icon').className = 'fas fa-lock-open plb-icon';
         status.textContent = 'Inicie o monitoramento GPS';
         if (statusMini) statusMini.textContent = 'Aguardando GPS';
         if (iconMini) { iconMini.className = 'fas fa-lock-open'; iconMini.style.color = 'var(--muted)'; }
-        btn.disabled = false; // permite captura manual sem monitoramento
+        if (btn) btn.disabled = false; // permite captura manual sem monitoramento
         return;
     }
     if (accuracy <= precisionLimit) {
@@ -1662,14 +1657,14 @@ function updatePrecisionLockBar(accuracy) {
         status.innerHTML = `<span class="plb-val">±${accuracy.toFixed(1)}m</span> ≤ ${precisionLimit}m <span style="opacity:0.7">✓ Pronto</span>`;
         if (statusMini) statusMini.innerHTML = `±${accuracy.toFixed(1)}m ✓ Pronto`;
         if (iconMini) { iconMini.className = 'fas fa-lock'; iconMini.style.color = 'var(--primary)'; }
-        btn.disabled = false;
+        if (btn) btn.disabled = false;
     } else {
         bar.className = 'precision-lock-bar waiting';
         bar.querySelector('.plb-icon').className = 'fas fa-lock-open plb-icon';
         status.innerHTML = `<span class="plb-val">±${accuracy.toFixed(1)}m</span> — aguardando ≤ ${precisionLimit}m`;
         if (statusMini) statusMini.innerHTML = `±${accuracy.toFixed(1)}m — aguardando ≤ ${precisionLimit}m`;
         if (iconMini) { iconMini.className = 'fas fa-lock-open'; iconMini.style.color = 'var(--warn)'; }
-        btn.disabled = true;
+        if (btn) btn.disabled = true;
     }
 }
 
@@ -1694,8 +1689,9 @@ async function savePrecisionLimit() {
 function setCoordSystem(sys){coordSystem=sys;updateCoordUI();renderAll();showToast(sys==='geographic'?'Sistema: Geográficas':`Sistema: UTM Zona ${utmZone}S`,'info');}
 function updateCoordUI(){
     const isUtm=coordSystem==='utm';
-    ['optGeo','optGeoSettings'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.toggle('active',!isUtm);el.querySelector('i').style.color=isUtm?'var(--muted)':'var(--primary)';});
-    ['optUtm','optUtmSettings'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.toggle('active',isUtm);el.querySelector('i').style.color=isUtm?'var(--primary)':'var(--muted)';});
+    const geo=document.getElementById('optGeo'), utm=document.getElementById('optUtm');
+    if(geo){geo.classList.toggle('active',!isUtm);geo.querySelector('i').style.color=isUtm?'var(--muted)':'var(--primary)';}
+    if(utm){utm.classList.toggle('active',isUtm);utm.querySelector('i').style.color=isUtm?'var(--primary)':'var(--muted)';}
     document.getElementById('utmZoneWrap').style.display=isUtm?'block':'none';
     const zb=document.getElementById('zoneBadge');
     if(isUtm){zb.style.display='inline-flex';zb.textContent=`Zona ${utmZone}S`;}else zb.style.display='none';
@@ -1707,10 +1703,7 @@ function updateUTMZone(){utmZone=parseInt(document.getElementById('utmZoneSelect
 // ═══════════════════════════════════════════════════
 function captureLocation() {
     showGPSStatus('searching','Obtendo...');
-    const btn=document.getElementById('btnCapture');
     const fab=document.getElementById('capMapFab');
-    btn.disabled=true;
-    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Obtendo...';
     if(fab){fab.disabled=true;fab.innerHTML='<i class="fas fa-spinner fa-spin"></i>';}
     navigator.geolocation.getCurrentPosition(pos=>{
         const{latitude:lat,longitude:lng,accuracy,altitude}=pos.coords;
@@ -1721,17 +1714,14 @@ function captureLocation() {
             captureType:currentCaptureType};
         points.unshift(point);
         if(currentCaptureType==='line'){ lineCaptureIds.push(point.id); updateLiveLineStats(); }
-        savePoints();renderAll();updateMainMap();updateCaptureMapPoints();
+        if(currentCaptureType==='polygon'){ polygonCaptureIds.push(point.id); updateLivePolygonStats(); }
+        savePoints();renderAll();updateMainMap();updateCaptureMapPoints();updateCapLastPointCard();
         showGPSStatus('active','GPS Ativo');
-        btn.disabled=false;
-        btn.innerHTML='<i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização';
         if(fab){fab.disabled=false;fab.innerHTML='<i class="fas fa-crosshairs" aria-hidden="true"></i>';}
         if(lastGPSAccuracy!==null) updatePrecisionLockBar(accuracy);
         showToast('Localização capturada'+(accuracy<5?' (Excelente!)':accuracy<10?' (Boa)':''),'success');
     },err=>{
         showGPSStatus('inactive','Erro');
-        btn.disabled=false;
-        btn.innerHTML='<i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização';
         if(fab){fab.disabled=false;fab.innerHTML='<i class="fas fa-crosshairs" aria-hidden="true"></i>';}
         showToast('Erro: '+err.message,'error');
     },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
@@ -1742,24 +1732,53 @@ function captureLocation() {
 // ═══════════════════════════════════════════════════
 let currentCaptureType = 'point';
 let lineCaptureIds = [];
+let polygonCaptureIds = [];
+let lineDistSelection = [];
 function setCaptureType(type){
     currentCaptureType = type;
     ['point','line','polygon'].forEach(t=>{
         const b=document.getElementById('capTypeBtn'+t.charAt(0).toUpperCase()+t.slice(1));
         if(b) b.classList.toggle('active', t===type);
     });
-    const lineBox = document.getElementById('lineStatsBox');
-    if(type==='line'){
-        lineCaptureIds = [];
-        lineBox.style.display='block';
+    document.getElementById('capInfoPoint').style.display = type==='point' ? '' : 'none';
+    document.getElementById('capInfoLine').style.display = type==='line' ? '' : 'none';
+    document.getElementById('capInfoPolygon').style.display = type==='polygon' ? '' : 'none';
+    if(type==='point'){
+        updateCapLastPointCard();
+    } else if(type==='line'){
+        lineCaptureIds = []; lineDistSelection = [];
         updateLiveLineStats();
         showToast('Modo Linha: cada ponto capturado será somado ao traçado atual','info');
     } else if(type==='polygon'){
-        lineBox.style.display='none';
-        showToast('Modo Polígono: capture os vértices e finalize na aba Trabalho → Área','info');
-    } else {
-        lineBox.style.display='none';
+        polygonCaptureIds = [];
+        updateLivePolygonStats();
+        showToast('Modo Polígono: capture os vértices em sequência ao redor da área','info');
     }
+}
+
+// ═══════════════════════════════════════════════════
+//  INFORMAÇÕES AUTOMÁTICAS — Ponto / Linha / Polígono
+// ═══════════════════════════════════════════════════
+function updateCapLastPointCard(){
+    const box = document.getElementById('capLastPointCard');
+    if(!box) return;
+    if(points.length===0){
+        box.innerHTML = `<div class="empty-state" style="padding:10px 4px"><i class="fas fa-map-marker-alt"></i><p style="margin:6px 0 0">Nenhum ponto capturado</p><small>Toque no botão flutuante do mapa para capturar</small></div>`;
+        return;
+    }
+    const p = points[0];
+    const utm = (p.utmX&&p.utmY) ? `${Math.round(p.utmX)}E, ${Math.round(p.utmY)}N (Zona ${p.utmZone||utmZone}S)` : '--';
+    const time = new Date(p.timestamp).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const accColor = p.accuracy<3?'var(--primary)':p.accuracy<6?'var(--accent)':p.accuracy<15?'var(--warn)':'var(--danger)';
+    box.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:14px;font-weight:800">${p.name}</div>
+            <span style="font-size:11px;color:${accColor};font-weight:700">±${Math.round(p.accuracy)}m</span>
+        </div>
+        <div class="coord-row"><span class="coord-label">Geográficas</span><span class="coord-val">${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</span></div>
+        <div class="coord-row" style="border:none"><span class="coord-label">UTM</span><span class="coord-val" style="color:var(--accent)">${utm}</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;font-weight:500">Capturado às ${time}</div>
+    `;
 }
 function updateLiveLineStats(){
     const box = document.getElementById('lineStatsBox');
@@ -1777,6 +1796,22 @@ function updateLiveLineStats(){
     for(let i=0;i<pts.length-1;i++) cum += haversineDistance(pts[i].lat,pts[i].lng,pts[i+1].lat,pts[i+1].lng);
     const lastSeg = haversineDistance(pts[pts.length-2].lat,pts[pts.length-2].lng,pts[pts.length-1].lat,pts[pts.length-1].lng);
     const straight = haversineDistance(pts[0].lat,pts[0].lng,pts[pts.length-1].lat,pts[pts.length-1].lng);
+
+    lineDistSelection = lineDistSelection.filter(id=>pts.some(p=>p.id===id));
+    let selDistHtml = '';
+    if(lineDistSelection.length===2){
+        const a = pts.find(p=>p.id===lineDistSelection[0]);
+        const b = pts.find(p=>p.id===lineDistSelection[1]);
+        if(a && b){
+            const d = haversineDistance(a.lat,a.lng,b.lat,b.lng);
+            selDistHtml = `<div class="area-info-tip" style="margin-top:10px"><i class="fas fa-ruler-combined" style="margin-right:6px;color:var(--tertiary)"></i>Distância entre <strong>${a.name}</strong> e <strong>${b.name}</strong>: <strong style="color:var(--tertiary)">${formatDist(d)}</strong></div>`;
+        }
+    }
+    const chips = pts.map((p,i)=>{
+        const sel = lineDistSelection.includes(p.id);
+        return `<div onclick="pickLineDistPoint(${p.id})" role="button" aria-pressed="${sel}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--shape-full);font-size:11px;font-weight:700;cursor:pointer;margin:0 6px 6px 0;background:${sel?'var(--tertiary)':'var(--card-high)'};color:${sel?'#fff':'var(--text)'};border:1px solid ${sel?'var(--tertiary)':'var(--border)'}">${i+1}. ${p.name}</div>`;
+    }).join('');
+
     box.innerHTML = `
         <div class="section-label" style="padding:0 0 8px"><i class="fas fa-route" style="color:var(--tertiary)"></i> Linha em coleta — ${pts.length} pontos</div>
         <div class="stats-row">
@@ -1784,9 +1819,50 @@ function updateLiveLineStats(){
             <div class="stat-box"><div class="stat-value" style="font-size:15px">${formatDist(cum)}</div><div class="stat-label">Acumulada</div></div>
             <div class="stat-box"><div class="stat-value" style="font-size:15px">${formatDist(straight)}</div><div class="stat-label">1º→últ. (reta)</div></div>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:10px;font-weight:500;line-height:1.5">
-            Quer medir entre outros dois pontos da linha? Use a seção <strong style="color:var(--text)">Medição de Distância</strong> abaixo e selecione os pontos desejados.
-        </div>`;
+        <div style="font-size:11px;color:var(--muted);margin:12px 0 6px;font-weight:600">Toque em 2 pontos para medir a distância entre eles:</div>
+        <div>${chips}</div>
+        ${selDistHtml}`;
+}
+function pickLineDistPoint(id){
+    const idx = lineDistSelection.indexOf(id);
+    if(idx>=0){ lineDistSelection.splice(idx,1); }
+    else { if(lineDistSelection.length>=2) lineDistSelection.shift(); lineDistSelection.push(id); }
+    updateLiveLineStats();
+}
+function updateLivePolygonStats(){
+    const box = document.getElementById('polygonStatsBox');
+    if(!box) return;
+    const pts = polygonCaptureIds.map(id=>points.find(p=>p.id===id)).filter(Boolean);
+    if(pts.length===0){
+        box.innerHTML = `<div class="section-label" style="padding:0 0 8px"><i class="fas fa-draw-polygon" style="color:var(--accent)"></i> Polígono em coleta</div><div class="empty-state" style="padding:14px"><small>Capture o 1º vértice do polígono</small></div>`;
+        return;
+    }
+    if(pts.length<3){
+        box.innerHTML = `<div class="section-label" style="padding:0 0 8px"><i class="fas fa-draw-polygon" style="color:var(--accent)"></i> Polígono em coleta — ${pts.length} vértice${pts.length>1?'s':''}</div><div class="empty-state" style="padding:14px"><small>Capture ao menos 3 vértices para calcular área e perímetro</small></div>`;
+        return;
+    }
+    const valid = pts.filter(p=>p.utmX&&p.utmY);
+    if(valid.length<3){
+        box.innerHTML = `<div class="empty-state" style="padding:14px"><small>Vértices sem coordenada UTM válida</small></div>`;
+        return;
+    }
+    let area=0, perimeter=0; const n=valid.length;
+    for(let i=0;i<n;i++){
+        const cur=valid[i], nxt=valid[(i+1)%n];
+        area += cur.utmX*nxt.utmY - nxt.utmX*cur.utmY;
+        const dx=nxt.utmX-cur.utmX, dy=nxt.utmY-cur.utmY;
+        perimeter += Math.sqrt(dx*dx+dy*dy);
+    }
+    area = Math.abs(area)/2; const areaHa = area/10000;
+    box.innerHTML = `
+        <div class="section-label" style="padding:0 0 8px"><i class="fas fa-draw-polygon" style="color:var(--accent)"></i> Polígono em coleta — ${n} vértices</div>
+        <div class="stats-row">
+            <div class="stat-box"><div class="stat-value" style="font-size:15px">${areaHa.toLocaleString('pt-BR',{maximumFractionDigits:4})}</div><div class="stat-label">Área (ha)</div></div>
+            <div class="stat-box"><div class="stat-value" style="font-size:15px">${area.toLocaleString('pt-BR',{maximumFractionDigits:1})}</div><div class="stat-label">Área (m²)</div></div>
+            <div class="stat-box"><div class="stat-value" style="font-size:15px">${formatDist(perimeter)}</div><div class="stat-label">Perímetro</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px;font-weight:500;line-height:1.5">Zona UTM ${valid[0].utmZone||utmZone}S (SIRGAS 2000). Calculado via Fórmula de Gauss (Shoelace) considerando a ordem de coleta dos vértices. Finalize e exporte na aba <strong style="color:var(--text)">Trabalho → Área</strong>.</div>
+    `;
 }
 
 
@@ -1907,7 +1983,9 @@ let mapCapture=null, capBasemapLayer=null, capLabelsLayer=null, capGpsMarker=nul
 const capBasemaps = {
     streets:   () => L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}),
     satellite: () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri, Maxar, Earthstar Geographics'}),
-    hybrid:    () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri, Maxar, Earthstar Geographics'})
+    hybrid:    () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri, Maxar, Earthstar Geographics'}),
+    terrain:   () => L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'OpenTopoMap'})
+    // novas opções de mapa base podem ser adicionadas aqui — basta seguir o mesmo padrão
 };
 function initCaptureMap(){
     if(!document.getElementById('mapCapture')) return;
@@ -1917,7 +1995,7 @@ function initCaptureMap(){
     updateCaptureMapPoints();
 }
 function setCaptureBasemap(type){
-    if(!mapCapture) return;
+    if(!mapCapture||!capBasemaps[type]) return;
     if(capBasemapLayer) mapCapture.removeLayer(capBasemapLayer);
     if(capLabelsLayer){ mapCapture.removeLayer(capLabelsLayer); capLabelsLayer=null; }
     capBasemapLayer = capBasemaps[type]().addTo(mapCapture);
@@ -1943,6 +2021,31 @@ function updateCaptureMapPosition(lat,lng){
     } else {
         capGpsMarker.setLatLng([lat,lng]);
     }
+}
+function locateOnCaptureMap(){
+    if(!navigator.geolocation){ showToast('Geolocalização não suportada','error'); return; }
+    if(!mapCapture) return;
+    const btn=document.getElementById('capLocateBtn');
+    if(btn) btn.querySelector('i').className='fas fa-spinner fa-spin';
+    navigator.geolocation.getCurrentPosition(pos=>{
+        const{latitude:lat,longitude:lng}=pos.coords;
+        mapCapture.setView([lat,lng],17);
+        updateCaptureMapPosition(lat,lng);
+        if(btn) btn.querySelector('i').className='fas fa-location-arrow';
+    }, err=>{
+        showToast('Não foi possível obter sua localização','error');
+        if(btn) btn.querySelector('i').className='fas fa-location-arrow';
+    }, {enableHighAccuracy:true,timeout:8000});
+}
+function capMinimizePanel(){
+    document.getElementById('capFloatingPanel').style.display='none';
+    document.getElementById('capPanelFab').style.display='flex';
+    setTimeout(()=>{ if(mapCapture) mapCapture.invalidateSize(); },50);
+}
+function capOpenPanel(){
+    document.getElementById('capFloatingPanel').style.display='flex';
+    document.getElementById('capPanelFab').style.display='none';
+    setTimeout(()=>{ if(mapCapture) mapCapture.invalidateSize(); },50);
 }
 
 // ═══════════════════════════════════════════════════
