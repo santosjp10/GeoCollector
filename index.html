@@ -196,6 +196,31 @@
         .map-header { padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:var(--card);border-bottom:1px solid var(--border); }
         .map-header-title { font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px; }
 
+        /* ═══ ÁREA DE TRABALHO (mapa unificado + painel flutuante) ═══ */
+        .ws-screen { position:relative;margin:-12px -16px 0;padding:0;height:calc(100dvh - 64px - 62px - var(--safe-top) - var(--safe-bottom)); }
+        .ws-map-stage { position:absolute;inset:0;background:var(--card-high);overflow:hidden; }
+        .ws-map-layer { position:absolute;inset:0;width:100%;height:100%;display:none; }
+        .ws-map-layer.active { display:block; }
+        .ws-mode-switch { position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:20;display:flex;background:var(--surface);border-radius:var(--shape-full);box-shadow:var(--elev-2);padding:4px;gap:4px; }
+        .ws-mode-btn { border:none;background:transparent;color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;padding:8px 14px;border-radius:var(--shape-full);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s; }
+        .ws-mode-btn.active { background:var(--primary);color:var(--on-primary); }
+        .ws-map-icon-btn { position:absolute;top:12px;right:12px;z-index:20;width:38px;height:38px;border-radius:50%;background:var(--surface);border:none;box-shadow:var(--elev-2);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px; }
+        .ws-panel-fab { position:absolute;bottom:16px;right:16px;z-index:25;width:52px;height:52px;border-radius:50%;background:var(--primary);color:var(--on-primary);border:none;box-shadow:var(--elev-3);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
+        .ws-floating-panel { position:absolute;left:8px;right:8px;bottom:8px;max-height:48%;z-index:22;background:var(--surface);border-radius:var(--shape-xl);box-shadow:var(--elev-3);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border); }
+        .ws-panel-handle { flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px 6px;cursor:pointer;color:var(--muted);font-size:11px;font-weight:700; }
+        .ws-handle-bar { position:absolute;left:50%;top:6px;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:var(--border); }
+        .ws-panel-body { flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 14px 16px; }
+        @media (min-width:640px){ .ws-screen{height:70vh;min-height:520px;} }
+
+        /* ═══ MAPA DA ABA CAPTURAR ═══ */
+        .cap-map-stage { position:relative;height:38vh;min-height:240px;border-radius:var(--shape-xl);overflow:hidden;border:1px solid var(--border);margin:0 -0px; }
+        .cap-map-inner { width:100%;height:100%; }
+        .cap-basemap-switch { position:absolute;bottom:12px;left:12px;z-index:20;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--shape-md);box-shadow:var(--elev-2);padding:4px;gap:4px; }
+        .cap-basemap-btn { border:none;background:transparent;color:var(--muted);width:32px;height:32px;border-radius:var(--shape-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px; }
+        .cap-basemap-btn.active { background:var(--primary);color:var(--on-primary); }
+        .cap-map-fab { position:absolute;bottom:16px;right:16px;z-index:20;width:54px;height:54px;border-radius:50%;background:var(--primary);color:var(--on-primary);border:none;box-shadow:var(--elev-3);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
+        .cap-map-fab:disabled { opacity:0.6; }
+
         /* IMPORT DROP ZONE */
         .import-drop-zone { border:2px dashed var(--border);border-radius:var(--shape-xl);padding:28px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--card-high); }
         .import-drop-zone.drag-over { border-color:var(--primary);background:rgba(46,125,50,0.05); }
@@ -498,7 +523,36 @@
 
         <!-- ══ SCREEN 1: CAPTURAR ══ -->
         <div class="screen active" id="screen-capture">
-            <p class="section-label">Status GPS</p>
+
+            <div class="cap-map-stage">
+                <div id="mapCapture" class="cap-map-inner"></div>
+
+                <div class="ws-mode-switch" role="tablist" aria-label="Tipo de captura">
+                    <button class="ws-mode-btn active" id="capTypeBtnPoint" onclick="setCaptureType('point')" role="tab" aria-selected="true">
+                        <i class="fas fa-map-marker-alt" aria-hidden="true"></i> Ponto
+                    </button>
+                    <button class="ws-mode-btn" id="capTypeBtnLine" onclick="setCaptureType('line')" role="tab" aria-selected="false">
+                        <i class="fas fa-route" aria-hidden="true"></i> Linha
+                    </button>
+                    <button class="ws-mode-btn" id="capTypeBtnPolygon" onclick="setCaptureType('polygon')" role="tab" aria-selected="false">
+                        <i class="fas fa-draw-polygon" aria-hidden="true"></i> Polígono
+                    </button>
+                </div>
+
+                <div class="cap-basemap-switch" role="group" aria-label="Camada base do mapa">
+                    <button class="cap-basemap-btn active" data-basemap="streets" onclick="setCaptureBasemap('streets')" title="Ruas" aria-label="Mapa de ruas"><i class="fas fa-road" aria-hidden="true"></i></button>
+                    <button class="cap-basemap-btn" data-basemap="satellite" onclick="setCaptureBasemap('satellite')" title="Satélite" aria-label="Mapa de satélite"><i class="fas fa-satellite" aria-hidden="true"></i></button>
+                    <button class="cap-basemap-btn" data-basemap="hybrid" onclick="setCaptureBasemap('hybrid')" title="Híbrido" aria-label="Mapa híbrido"><i class="fas fa-layer-group" aria-hidden="true"></i></button>
+                </div>
+
+                <button id="capMapFab" onclick="captureLocation()" class="cap-map-fab" aria-label="Capturar localização GPS atual">
+                    <i class="fas fa-crosshairs" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div id="lineStatsBox" class="card" style="display:none;margin-top:12px;padding:14px"></div>
+
+            <p class="section-label" style="margin-top:14px">Status GPS</p>
 
             <div id="gpsMonitor" class="gps-monitor" style="display:none">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -529,11 +583,12 @@
                 </button>
             </div>
 
-            <!-- PRECISION LOCK BAR -->
-            <div id="precisionLockBar" class="precision-lock-bar no-gps" style="margin-top:10px">
-                <i class="fas fa-lock-open plb-icon"></i>
-                <div class="plb-text">Trava de Precisão: <span id="plbStatus">Aguardando GPS</span></div>
-                <button class="plb-config-btn" onclick="openPrecisionSettings()" title="Configurar limite"><i class="fas fa-sliders-h"></i></button>
+            <div class="card" style="margin-top:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px" id="precisionLockMini">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                    <i class="fas fa-lock-open" id="plbMiniIcon" style="color:var(--muted)"></i>
+                    <div style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trava de Precisão: <span id="plbStatusMini" style="color:var(--text)">Aguardando GPS</span></div>
+                </div>
+                <button class="icon-btn" onclick="switchTab('settings')" title="Configurar em Configurações" style="flex-shrink:0"><i class="fas fa-sliders-h"></i></button>
             </div>
 
             <p class="section-label" style="margin-top:4px">Coordenadas</p>
@@ -697,109 +752,114 @@
                 </div>
             </div>
 
-            <!-- COMPARTILHAR -->
-            <p class="section-label">Compartilhar e Exportar</p>
-            <div class="share-grid">
-                <div class="share-btn whatsapp" onclick="shareWhatsApp()">
-                    <i class="fab fa-whatsapp"></i>WhatsApp
-                </div>
-                <div class="share-btn email" onclick="shareEmail()">
-                    <i class="fas fa-envelope"></i>E-mail
-                </div>
-                <div class="share-btn report" onclick="generateReport()">
-                    <i class="fas fa-file-pdf"></i>Relatório
-                </div>
-            </div>
-            <div class="export-grid" style="margin-bottom:8px">
-                <div class="export-btn" onclick="exportData('geojson')"><i class="fas fa-file-code" style="color:var(--primary)"></i>GeoJSON</div>
-                <div class="export-btn" onclick="exportData('csv')"><i class="fas fa-file-csv" style="color:var(--accent)"></i>CSV</div>
-                <div class="export-btn" onclick="exportKMLEnhanced()"><i class="fas fa-globe" style="color:var(--warn)"></i>KML+</div>
-                <div class="export-btn" onclick="syncBackupJSON()"><i class="fas fa-cloud-download-alt" style="color:var(--tertiary)"></i>Backup JSON</div>
-            </div>
             <div style="padding-bottom:12px"></div>
         </div>
 
-        <!-- ══ SCREEN 2: MAPA ══ -->
-        <div class="screen" id="screen-map">
-            <p class="section-label">Visualização</p>
-            <div class="map-wrap map-wrap-lg">
-                <div class="map-header">
-                    <span class="map-header-title"><i class="fas fa-map" style="color:var(--primary)"></i> Pontos coletados</span>
-                    <button onclick="centerMap()" class="icon-btn" title="Centralizar"><i class="fas fa-compress-arrows-alt"></i></button>
-                </div>
-                <div id="map" class="map-inner"></div>
-            </div>
-            <p id="mapPointCount" class="section-label" style="justify-content:center;text-align:center">0 pontos no mapa</p>
-            <p class="section-label">Lista de Pontos</p>
-            <div id="pointsList">
-                <div class="empty-state"><i class="fas fa-map-marked-alt"></i><p>Nenhum ponto coletado</p><small>Capture pontos na aba Capturar</small></div>
-            </div>
-        </div>
+        <!-- ══ SCREEN 2+3: ÁREA DE TRABALHO (Mapa + Área unificados) ══ -->
+        <div class="screen ws-screen" id="screen-workspace">
+            <div class="ws-map-stage">
+                <div id="map" class="ws-map-layer active"></div>
+                <div id="mapArea" class="ws-map-layer"></div>
 
-        <!-- ══ SCREEN 3: ÁREA ══ -->
-        <div class="screen" id="screen-area">
-            <div class="card hero-card-area" style="margin-top:4px">
-                <div style="display:flex;align-items:center;gap:14px">
-                    <div class="hero-icon-area"><i class="fas fa-draw-polygon"></i></div>
-                    <div><div style="font-size:16px;font-weight:800">Cálculo de Área</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-weight:500">Selecione ≥ 3 pontos para formar o polígono</div></div>
+                <div class="ws-mode-switch" role="tablist" aria-label="Modo da área de trabalho">
+                    <button class="ws-mode-btn active" id="wsModeBtnPoints" onclick="wsSetMode('points')" role="tab" aria-selected="true">
+                        <i class="fas fa-map-marked-alt" aria-hidden="true"></i> Pontos
+                    </button>
+                    <button class="ws-mode-btn" id="wsModeBtnArea" onclick="wsSetMode('area')" role="tab" aria-selected="false">
+                        <i class="fas fa-draw-polygon" aria-hidden="true"></i> Área
+                    </button>
                 </div>
+
+                <button onclick="wsCenter()" class="ws-map-icon-btn" id="wsCenterBtn" title="Centralizar" aria-label="Centralizar mapa">
+                    <i class="fas fa-compress-arrows-alt" aria-hidden="true"></i>
+                </button>
+
+                <button class="ws-panel-fab" id="wsPanelFab" onclick="wsOpenPanel()" style="display:none" aria-label="Abrir painel de dados">
+                    <i class="fas fa-layer-group" aria-hidden="true"></i>
+                    <span id="wsPanelFabBadge" class="tab-badge" style="display:none;position:absolute;top:-4px;right:-4px">0</span>
+                </button>
             </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px">
-                <div style="display:flex;align-items:center;gap:8px">
-                    <span style="font-size:13px;color:var(--muted);font-weight:500">Selecionados:</span>
-                    <span id="selectionCount" class="sel-counter" aria-live="polite" aria-label="pontos selecionados">0</span>
+
+            <!-- PAINEL FLUTUANTE DE DADOS -->
+            <div class="ws-floating-panel" id="wsFloatingPanel">
+                <div class="ws-panel-handle" onclick="wsMinimizePanel()" role="button" aria-label="Minimizar painel">
+                    <div class="ws-handle-bar" aria-hidden="true"></div>
+                    <span>Minimizar painel</span>
+                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
                 </div>
-                <div style="display:flex;gap:8px">
-                    <button onclick="clearSelection()" class="btn btn-ghost btn-sm" style="width:auto" aria-label="Limpar seleção de pontos"><i class="fas fa-undo" aria-hidden="true"></i> Limpar</button>
-                    <button onclick="autoSelectPolygon()" class="btn btn-tonal btn-sm" style="width:auto" aria-label="Selecionar automaticamente todos os pontos para o polígono"><i class="fas fa-magic" aria-hidden="true"></i> Auto</button>
+                <div class="ws-panel-body">
+
+                    <!-- SUB-PAINEL: PONTOS -->
+                    <div id="wsPanelPoints">
+                        <p id="mapPointCount" class="section-label" style="justify-content:center;text-align:center">0 pontos no mapa</p>
+                        <p class="section-label">Lista de Pontos</p>
+                        <div id="pointsList">
+                            <div class="empty-state"><i class="fas fa-map-marked-alt"></i><p>Nenhum ponto coletado</p><small>Capture pontos na aba Capturar</small></div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-PAINEL: ÁREA -->
+                    <div id="wsPanelArea" style="display:none">
+                        <div class="card hero-card-area" style="margin-top:0">
+                            <div style="display:flex;align-items:center;gap:14px">
+                                <div class="hero-icon-area"><i class="fas fa-draw-polygon"></i></div>
+                                <div><div style="font-size:16px;font-weight:800">Cálculo de Área</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-weight:500">Selecione ≥ 3 pontos para formar o polígono</div></div>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <span style="font-size:13px;color:var(--muted);font-weight:500">Selecionados:</span>
+                                <span id="selectionCount" class="sel-counter" aria-live="polite" aria-label="pontos selecionados">0</span>
+                                <span id="polygonInfo" style="font-size:11px;color:var(--muted);font-weight:600">Nenhum polígono</span>
+                            </div>
+                            <div style="display:flex;gap:8px">
+                                <button onclick="clearSelection()" class="btn btn-ghost btn-sm" style="width:auto" aria-label="Limpar seleção de pontos"><i class="fas fa-undo" aria-hidden="true"></i> Limpar</button>
+                                <button onclick="autoSelectPolygon()" class="btn btn-tonal btn-sm" style="width:auto" aria-label="Selecionar automaticamente todos os pontos para o polígono"><i class="fas fa-magic" aria-hidden="true"></i> Auto</button>
+                            </div>
+                        </div>
+                        <div id="areaResults" style="display:none" class="area-result-box">
+                            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+                                <div id="areaHa" class="area-big">--</div><div class="area-unit">hectares</div>
+                            </div>
+                            <div style="font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:500" id="areaM2Sub">-- m²</div>
+                            <div>
+                                <div class="area-detail-row"><span class="area-detail-label">Área (m²)</span><span id="areaM2" class="area-detail-val">--</span></div>
+                                <div class="area-detail-row"><span class="area-detail-label">Perímetro</span><span id="perimeter" class="area-detail-val">--</span></div>
+                                <div class="area-detail-row"><span class="area-detail-label">Vértices</span><span id="vertexCount" class="area-detail-val">--</span></div>
+                                <div class="area-detail-row"><span class="area-detail-label">Zona UTM</span><span id="utmZoneUsed" class="area-detail-val">--</span></div>
+                            </div>
+                            <div class="area-info-tip">
+                                <i class="fas fa-info-circle" style="margin-right:6px;color:var(--primary)"></i>Calculado via Fórmula de Gauss (Shoelace) em coordenadas UTM
+                            </div>
+                        </div>
+                        <div id="exportPolygonPanel" style="display:none">
+                            <p class="section-label">Exportar Polígono</p>
+                            <div class="share-grid" style="margin-bottom:10px">
+                                <div class="share-btn whatsapp" onclick="sharePolygonWhatsApp()"><i class="fab fa-whatsapp"></i>WhatsApp</div>
+                                <div class="share-btn email" onclick="sharePolygonEmail()"><i class="fas fa-envelope"></i>E-mail</div>
+                                <div class="share-btn report" onclick="generateReport()"><i class="fas fa-file-pdf"></i>Relatório</div>
+                            </div>
+                            <div class="export-grid" style="margin-bottom:12px">
+                                <div class="export-btn" onclick="exportPolygon('geojson')"><i class="fas fa-file-code" style="color:var(--primary)"></i>GeoJSON</div>
+                                <div class="export-btn" onclick="exportPolygonKMLEnhanced()"><i class="fas fa-globe" style="color:var(--warn)"></i>KML+</div>
+                                <div class="export-btn" onclick="exportPolygon('csv')"><i class="fas fa-file-csv" style="color:var(--accent)"></i>CSV</div>
+                                <div class="export-btn" onclick="exportPolygon('report')"><i class="fas fa-file-alt" style="color:var(--muted)"></i>TXT</div>
+                            </div>
+                        </div>
+                        <div id="selectionHint" class="empty-state hint-dashed" style="padding:28px;margin-bottom:12px">
+                            <i class="fas fa-hand-pointer" style="font-size:30px;margin-bottom:10px;opacity:0.35"></i>
+                            <p>Selecione pontos abaixo para o polígono</p><small>Mínimo 3 pontos • A ordem importa</small>
+                        </div>
+                        <button onclick="calculateArea()" id="btnCalculate" disabled class="btn btn-accent" style="margin-bottom:12px;border-radius:var(--shape-full);height:52px;font-size:15px">
+                            <i class="fas fa-calculator"></i> Calcular Área do Polígono
+                        </button>
+                        <p class="section-label">Pontos Disponíveis</p>
+                        <div id="areaPointsList">
+                            <div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum ponto disponível</p><small>Colete pontos na aba Capturar</small></div>
+                        </div>
+                    </div>
+
                 </div>
-            </div>
-            <div class="map-wrap" style="margin-bottom:12px">
-                <div class="map-header">
-                    <span class="map-header-title"><i class="fas fa-eye" style="color:var(--accent)"></i> Visualização do Polígono</span>
-                    <span id="polygonInfo" style="font-size:11px;color:var(--muted);font-weight:600">Nenhum polígono</span>
-                </div>
-                <div id="mapArea" class="map-inner"></div>
-            </div>
-            <div id="areaResults" style="display:none" class="area-result-box">
-                <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
-                    <div id="areaHa" class="area-big">--</div><div class="area-unit">hectares</div>
-                </div>
-                <div style="font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:500" id="areaM2Sub">-- m²</div>
-                <div>
-                    <div class="area-detail-row"><span class="area-detail-label">Área (m²)</span><span id="areaM2" class="area-detail-val">--</span></div>
-                    <div class="area-detail-row"><span class="area-detail-label">Perímetro</span><span id="perimeter" class="area-detail-val">--</span></div>
-                    <div class="area-detail-row"><span class="area-detail-label">Vértices</span><span id="vertexCount" class="area-detail-val">--</span></div>
-                    <div class="area-detail-row"><span class="area-detail-label">Zona UTM</span><span id="utmZoneUsed" class="area-detail-val">--</span></div>
-                </div>
-                <div class="area-info-tip">
-                    <i class="fas fa-info-circle" style="margin-right:6px;color:var(--primary)"></i>Calculado via Fórmula de Gauss (Shoelace) em coordenadas UTM
-                </div>
-            </div>
-            <div id="exportPolygonPanel" style="display:none">
-                <p class="section-label">Exportar Polígono</p>
-                <div class="share-grid" style="margin-bottom:10px">
-                    <div class="share-btn whatsapp" onclick="sharePolygonWhatsApp()"><i class="fab fa-whatsapp"></i>WhatsApp</div>
-                    <div class="share-btn email" onclick="sharePolygonEmail()"><i class="fas fa-envelope"></i>E-mail</div>
-                    <div class="share-btn report" onclick="generateReport()"><i class="fas fa-file-pdf"></i>Relatório</div>
-                </div>
-                <div class="export-grid" style="margin-bottom:12px">
-                    <div class="export-btn" onclick="exportPolygon('geojson')"><i class="fas fa-file-code" style="color:var(--primary)"></i>GeoJSON</div>
-                    <div class="export-btn" onclick="exportPolygonKMLEnhanced()"><i class="fas fa-globe" style="color:var(--warn)"></i>KML+</div>
-                    <div class="export-btn" onclick="exportPolygon('csv')"><i class="fas fa-file-csv" style="color:var(--accent)"></i>CSV</div>
-                    <div class="export-btn" onclick="exportPolygon('report')"><i class="fas fa-file-alt" style="color:var(--muted)"></i>TXT</div>
-                </div>
-            </div>
-            <div id="selectionHint" class="empty-state hint-dashed" style="padding:28px;margin-bottom:12px">
-                <i class="fas fa-hand-pointer" style="font-size:30px;margin-bottom:10px;opacity:0.35"></i>
-                <p>Selecione pontos abaixo para o polígono</p><small>Mínimo 3 pontos • A ordem importa</small>
-            </div>
-            <button onclick="calculateArea()" id="btnCalculate" disabled class="btn btn-accent" style="margin-bottom:12px;border-radius:var(--shape-full);height:52px;font-size:15px">
-                <i class="fas fa-calculator"></i> Calcular Área do Polígono
-            </button>
-            <p class="section-label">Pontos Disponíveis</p>
-            <div id="areaPointsList">
-                <div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum ponto disponível</p><small>Colete pontos na aba Capturar</small></div>
             </div>
         </div>
 
@@ -808,30 +868,30 @@
             <div class="card hero-card-sessions" style="margin-top:4px">
                 <div style="display:flex;align-items:center;gap:14px">
                     <div class="hero-icon-sessions"><i class="fas fa-layer-group"></i></div>
-                    <div><div style="font-size:16px;font-weight:800">Histórico de Sessões</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-weight:500">Salve e recupere diferentes saídas de campo</div></div>
+                    <div><div style="font-size:16px;font-weight:800">Histórico de Projetos</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-weight:500">Salve e recupere diferentes saídas de campo</div></div>
                 </div>
             </div>
-            <p class="section-label">Sessão Atual</p>
+            <p class="section-label">Projeto Atual</p>
             <div class="card">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                     <div>
-                        <div id="currentSessionName" style="font-size:15px;font-weight:800">Sessão Atual</div>
+                        <div id="currentSessionName" style="font-size:15px;font-weight:800">Projeto Atual</div>
                         <div id="currentSessionMeta" style="font-size:12px;color:var(--muted);margin-top:2px;font-weight:500">0 pontos</div>
                     </div>
                     <button onclick="renameSession()" class="icon-btn" title="Renomear"><i class="fas fa-pen"></i></button>
                 </div>
                 <div class="btn-group">
                     <button onclick="saveSession()" class="btn btn-tonal btn-sm">
-                        <i class="fas fa-save"></i> Salvar Sessão
+                        <i class="fas fa-save"></i> Salvar Projeto
                     </button>
                     <button onclick="newSession()" class="btn btn-ghost btn-sm">
-                        <i class="fas fa-plus"></i> Nova Sessão
+                        <i class="fas fa-plus"></i> Novo Projeto
                     </button>
                 </div>
             </div>
-            <p class="section-label">Sessões Salvas</p>
+            <p class="section-label">Projetos Salvos</p>
             <div id="sessionsList">
-                <div class="empty-state"><i class="fas fa-history"></i><p>Nenhuma sessão salva</p><small>Salve a sessão atual para acessar depois</small></div>
+                <div class="empty-state"><i class="fas fa-history"></i><p>Nenhum projeto salvo</p><small>Salve o projeto atual para acessar depois</small></div>
             </div>
         </div>
 
@@ -868,9 +928,29 @@
                 <div class="chart-title"><i class="fas fa-ruler-horizontal" style="color:var(--warn)"></i> Classes de DAP (cm)</div>
                 <div id="chartDAP" class="bar-chart"><div style="color:var(--muted);font-size:13px;padding:8px 0">Sem dados de DAP</div></div>
             </div>
-            <div class="chart-card" style="margin-bottom:20px">
+            <div class="chart-card">
                 <div class="chart-title"><i class="fas fa-crosshairs" style="color:var(--danger)"></i> Qualidade GPS</div>
                 <div id="chartGPS" class="bar-chart"></div>
+            </div>
+
+            <!-- COMPARTILHAR E EXPORTAR (movido da aba Capturar) -->
+            <p class="section-label" style="margin-top:4px">Compartilhar e Exportar</p>
+            <div class="share-grid">
+                <div class="share-btn whatsapp" onclick="shareWhatsApp()">
+                    <i class="fab fa-whatsapp"></i>WhatsApp
+                </div>
+                <div class="share-btn email" onclick="shareEmail()">
+                    <i class="fas fa-envelope"></i>E-mail
+                </div>
+                <div class="share-btn report" onclick="generateReport()">
+                    <i class="fas fa-file-pdf"></i>Relatório
+                </div>
+            </div>
+            <div class="export-grid" style="margin-bottom:20px">
+                <div class="export-btn" onclick="exportData('geojson')"><i class="fas fa-file-code" style="color:var(--primary)"></i>GeoJSON</div>
+                <div class="export-btn" onclick="exportData('csv')"><i class="fas fa-file-csv" style="color:var(--accent)"></i>CSV</div>
+                <div class="export-btn" onclick="exportKMLEnhanced()"><i class="fas fa-globe" style="color:var(--warn)"></i>KML+</div>
+                <div class="export-btn" onclick="syncBackupJSON()"><i class="fas fa-cloud-download-alt" style="color:var(--tertiary)"></i>Backup JSON</div>
             </div>
         </div>
 
@@ -882,7 +962,7 @@
                 <div style="font-size:13px;color:var(--muted);font-weight:500">v5.0 · Sensoriamento Remoto e SIG</div>
                 <div class="about-badge-primary">
                     <i class="fas fa-graduation-cap" style="color:var(--tertiary);font-size:12px"></i>
-                    <span style="font-size:12px;color:var(--tertiary);font-weight:700">Agronomia · Engenharia Florestal · UFT</span>
+                    <span style="font-size:12px;color:var(--tertiary);font-weight:700">Curso de Agronomia · UFT</span>
                 </div>
             </div>
             <div class="card" style="text-align:center;padding:20px">
@@ -890,7 +970,7 @@
                     <i class="fas fa-university" style="color:var(--tertiary)"></i>
                     <span style="font-size:13px;color:var(--tertiary);font-weight:700">Universidade Federal do Tocantins</span>
                 </div>
-                <div style="font-size:15px;font-weight:800;margin-bottom:4px">Cursos de Agronomia e Engenharia Florestal</div>
+                <div style="font-size:15px;font-weight:800;margin-bottom:4px">Curso de Agronomia</div>
                 <div style="font-size:12px;color:var(--muted);font-weight:500">Campus Universitário de Gurupi</div>
                 <div class="about-discipline-tag">
                     <span style="font-size:13px;font-weight:700;color:var(--primary)">Disciplina: Sensoriamento Remoto e SIG</span>
@@ -904,6 +984,10 @@
                         <div style="font-size:15px;font-weight:800;margin-bottom:4px">Prof. Dr. Jacinto Pereira Santos</div>
                         <div style="font-size:12px;color:var(--primary);font-weight:700;margin-bottom:8px">Doutor em Ciências · DSc.</div>
                         <div style="font-size:13px;color:var(--muted);line-height:1.65;font-weight:500">Iniciativa do <strong style="color:var(--text)">Prof. Dsc. Jacinto Pereira Santos</strong>, professor de <strong style="color:var(--text)">Sensoriamento Remoto e SIG</strong> no curso de Agronomia da UFT — Campus Gurupi.</div>
+                        <div style="font-size:12px;color:var(--tertiary);font-weight:700;margin-top:10px;display:flex;align-items:center;gap:6px">
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
+                            <span>Contato: <a href="mailto:santosjp@uft.edu.br" style="color:var(--tertiary);text-decoration:underline">santosjp@uft.edu.br</a></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -937,6 +1021,57 @@
             </div>
         </div>
 
+        <!-- ══ SCREEN 7: CONFIGURAÇÕES ══ -->
+        <div class="screen" id="screen-settings">
+            <div class="card" style="margin-top:4px">
+                <div style="display:flex;align-items:center;gap:14px">
+                    <div style="width:48px;height:48px;background:var(--primary-container);border-radius:var(--shape-lg);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--md-sys-color-on-primary-container);flex-shrink:0">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div><div style="font-size:16px;font-weight:800">Configurações</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-weight:500">Ajustes do aplicativo e da coleta em campo</div></div>
+                </div>
+            </div>
+
+            <p class="section-label" style="margin-top:4px">Trava de Precisão GPS</p>
+            <div class="card" style="padding:14px">
+                <div style="font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:500;line-height:1.5">
+                    O botão "Capturar Localização" só é liberado quando a precisão do GPS atinge o limite definido abaixo.
+                </div>
+                <div id="precisionLockBar" class="precision-lock-bar no-gps">
+                    <i class="fas fa-lock-open plb-icon"></i>
+                    <div class="plb-text">Status: <span id="plbStatus">Aguardando GPS</span></div>
+                    <button class="plb-config-btn" onclick="openPrecisionSettings()" title="Configurar limite"><i class="fas fa-sliders-h"></i></button>
+                </div>
+            </div>
+
+            <p class="section-label">Sistema de Coordenadas Padrão</p>
+            <div class="card" style="padding:14px">
+                <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500;line-height:1.5">
+                    Define como as coordenadas são exibidas na aba Capturar. Também pode ser alterado por lá.
+                </div>
+                <div class="coord-selector">
+                    <div class="coord-option" id="optGeoSettings" onclick="setCoordSystem('geographic')">
+                        <i class="fas fa-globe" style="color:var(--primary)"></i>
+                        <div class="co-name">Geográficas</div><div class="co-sub">Lat / Long</div>
+                    </div>
+                    <div class="coord-option" id="optUtmSettings" onclick="setCoordSystem('utm')">
+                        <i class="fas fa-map" style="color:var(--muted)"></i>
+                        <div class="co-name">UTM</div><div class="co-sub">X / Y (m)</div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="section-label">Aparência</p>
+            <div class="card" style="padding:14px;display:flex;align-items:center;justify-content:space-between">
+                <div>
+                    <div style="font-size:13px;font-weight:800">Tema Claro / Escuro</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500">Alterne o tema visual do aplicativo</div>
+                </div>
+                <button onclick="toggleTheme()" class="btn btn-ghost btn-sm" style="width:auto"><i class="fas fa-moon"></i> Alternar</button>
+            </div>
+            <div style="padding-bottom:12px"></div>
+        </div>
+
     </div><!-- end content-area -->
 
     <!-- ARIA LIVE REGION para anúncios de leitores de tela -->
@@ -949,28 +1084,27 @@
             <div class="tab-icon-wrap"><i class="fas fa-crosshairs tab-icon" aria-hidden="true"></i></div>
             <span class="tab-label">Capturar</span>
         </div>
-        <div class="tab-item" id="tab-map" onclick="switchTab('map')" role="tab" aria-selected="false" aria-controls="screen-map" tabindex="0">
+        <div class="tab-item" id="tab-workspace" onclick="switchTab('workspace')" role="tab" aria-selected="false" aria-controls="screen-workspace" tabindex="0">
             <div class="tab-indicator" aria-hidden="true"></div>
             <div class="tab-icon-wrap"><i class="fas fa-map tab-icon" aria-hidden="true"></i></div>
-            <span class="tab-label">Mapa</span>
-            <span id="mapBadge" class="tab-badge" style="display:none" aria-label="pontos no mapa">0</span>
-        </div>
-        <div class="tab-item" id="tab-area" onclick="switchTab('area')" role="tab" aria-selected="false" aria-controls="screen-area" tabindex="0">
-            <div class="tab-indicator" aria-hidden="true"></div>
-            <div class="tab-icon-wrap"><i class="fas fa-draw-polygon tab-icon" aria-hidden="true"></i></div>
-            <span class="tab-label">Área</span>
-            <span id="areaBadge" class="tab-badge" style="display:none" aria-label="pontos disponíveis">0</span>
+            <span class="tab-label">Trabalho</span>
+            <span id="workspaceBadge" class="tab-badge" style="display:none" aria-label="pontos coletados">0</span>
         </div>
         <div class="tab-item" id="tab-sessions" onclick="switchTab('sessions')" role="tab" aria-selected="false" aria-controls="screen-sessions" tabindex="0">
             <div class="tab-indicator" aria-hidden="true"></div>
             <div class="tab-icon-wrap"><i class="fas fa-layer-group tab-icon" aria-hidden="true"></i></div>
-            <span class="tab-label">Sessões</span>
-            <span id="sessionsBadge" class="tab-badge" style="display:none;background:var(--tertiary);color:var(--md-sys-color-on-tertiary)" aria-label="sessões salvas">0</span>
+            <span class="tab-label">Projetos</span>
+            <span id="sessionsBadge" class="tab-badge" style="display:none;background:var(--tertiary);color:var(--md-sys-color-on-tertiary)" aria-label="projetos salvos">0</span>
         </div>
         <div class="tab-item" id="tab-dashboard" onclick="switchTab('dashboard')" role="tab" aria-selected="false" aria-controls="screen-dashboard" tabindex="0">
             <div class="tab-indicator" aria-hidden="true"></div>
             <div class="tab-icon-wrap"><i class="fas fa-chart-bar tab-icon" aria-hidden="true"></i></div>
             <span class="tab-label">Dados</span>
+        </div>
+        <div class="tab-item" id="tab-settings" onclick="switchTab('settings')" role="tab" aria-selected="false" aria-controls="screen-settings" tabindex="0">
+            <div class="tab-indicator" aria-hidden="true"></div>
+            <div class="tab-icon-wrap"><i class="fas fa-sliders-h tab-icon" aria-hidden="true"></i></div>
+            <span class="tab-label">Config.</span>
         </div>
         <div class="tab-item" id="tab-about" onclick="switchTab('about')" role="tab" aria-selected="false" aria-controls="screen-about" tabindex="0">
             <div class="tab-indicator" aria-hidden="true"></div>
@@ -1075,7 +1209,7 @@
 <div id="sessionModal" class="modal-overlay" onclick="if(event.target===this)closeSessionModal()">
     <div class="modal-sheet" style="max-height:50dvh">
         <div class="modal-handle"></div>
-        <div style="font-size:18px;font-weight:800;margin-bottom:20px">Nome da Sessão</div>
+        <div style="font-size:18px;font-weight:800;margin-bottom:20px">Nome do Projeto</div>
         <div class="field-group">
             <label class="field-label">Identificação da saída de campo</label>
             <input type="text" id="sessionNameInput" class="field-input" placeholder="Ex: Campo 01 — Parcela A">
@@ -1289,6 +1423,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (sn)  currentSessionName = sn;
     }
     initMap();
+    initCaptureMap();
     renderAll();
     checkGPSPermission();
     updateCoordUI();
@@ -1389,11 +1524,45 @@ function switchTab(tab) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-' + tab).classList.add('active');
     currentTab = tab;
-    if (tab === 'map')       setTimeout(() => { if(map){map.invalidateSize();updateMainMap();if(trackLogPoints.length>=2)drawTrackLogOnMap();} }, 120);
-    if (tab === 'area')      { if(!mapArea) setTimeout(initAreaMap,100); else setTimeout(()=>{mapArea.invalidateSize();updateAreaMap();},120); }
+    if (tab === 'capture')   { setTimeout(() => { if (mapCapture) { mapCapture.invalidateSize(); updateCaptureMapPoints(); } }, 120); }
+    if (tab === 'workspace') { wsSetMode(wsMode || 'points'); }
     if (tab === 'about')     { document.getElementById('aboutTotalPoints').textContent=points.length; document.getElementById('aboutAreas').textContent=areasCalcCount; }
     if (tab === 'sessions')  { updateSessionDisplay(); renderSessionsList(); }
     if (tab === 'dashboard') { updateDashboard(); }
+    if (tab === 'settings')  { document.getElementById('precisionLimitInput') && (document.getElementById('precisionLimitInput').value = precisionLimit); }
+}
+
+// ═══════════════════════════════════════════════════
+//  ÁREA DE TRABALHO — alternância Pontos / Área
+// ═══════════════════════════════════════════════════
+let wsMode = 'points';
+function wsSetMode(mode) {
+    wsMode = mode;
+    document.getElementById('wsModeBtnPoints').classList.toggle('active', mode === 'points');
+    document.getElementById('wsModeBtnArea').classList.toggle('active', mode === 'area');
+    document.getElementById('wsModeBtnPoints').setAttribute('aria-selected', mode === 'points');
+    document.getElementById('wsModeBtnArea').setAttribute('aria-selected', mode === 'area');
+    document.getElementById('map').classList.toggle('active', mode === 'points');
+    document.getElementById('mapArea').classList.toggle('active', mode === 'area');
+    document.getElementById('wsPanelPoints').style.display = mode === 'points' ? '' : 'none';
+    document.getElementById('wsPanelArea').style.display = mode === 'area' ? '' : 'none';
+    if (mode === 'points') {
+        setTimeout(() => { if (map) { map.invalidateSize(); updateMainMap(); if (trackLogPoints.length >= 2) drawTrackLogOnMap(); } }, 120);
+    } else {
+        if (!mapArea) setTimeout(initAreaMap, 100);
+        else setTimeout(() => { mapArea.invalidateSize(); updateAreaMap(); }, 120);
+    }
+}
+function wsMinimizePanel() {
+    document.getElementById('wsFloatingPanel').style.display = 'none';
+    const fab = document.getElementById('wsPanelFab');
+    fab.style.display = 'flex';
+    setTimeout(() => { if (wsMode === 'points' && map) map.invalidateSize(); if (wsMode === 'area' && mapArea) mapArea.invalidateSize(); }, 50);
+}
+function wsOpenPanel() {
+    document.getElementById('wsFloatingPanel').style.display = 'flex';
+    document.getElementById('wsPanelFab').style.display = 'none';
+    setTimeout(() => { if (wsMode === 'points' && map) map.invalidateSize(); if (wsMode === 'area' && mapArea) mapArea.invalidateSize(); }, 50);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1403,9 +1572,9 @@ function renderAll() { renderPoints(); renderAreaPointsList(); updateStats(); up
 
 function updateBadges() {
     const n = points.length;
-    const mapB = document.getElementById('mapBadge'), areaB = document.getElementById('areaBadge');
-    if(n>0){mapB.style.display='flex';mapB.textContent=n;areaB.style.display='flex';areaB.textContent=n;}
-    else{mapB.style.display='none';areaB.style.display='none';}
+    const wsB = document.getElementById('workspaceBadge');
+    if(n>0){wsB.style.display='flex';wsB.textContent=n;}
+    else{wsB.style.display='none';}
     document.getElementById('mapPointCount').textContent = n + ' pontos no mapa';
     const sb = document.getElementById('sessionsBadge');
     if(sessions.length>0){sb.style.display='flex';sb.textContent=sessions.length;}else{sb.style.display='none';}
@@ -1465,6 +1634,7 @@ function updateLiveDisplay(position) {
     document.getElementById('liveSatellites').textContent=sats;
     if(coordSystem==='utm'){const utm=toUTM(lat,lng,utmZone);if(utm){document.getElementById('liveUtmRow').style.display='flex';document.getElementById('liveUtm').textContent=`${Math.round(utm.x)}, ${Math.round(utm.y)}`;}}
     else document.getElementById('liveUtmRow').style.display='none';
+    updateCaptureMapPosition(lat,lng);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1474,11 +1644,15 @@ function updatePrecisionLockBar(accuracy) {
     lastGPSAccuracy = accuracy;
     const bar = document.getElementById('precisionLockBar');
     const status = document.getElementById('plbStatus');
+    const statusMini = document.getElementById('plbStatusMini');
+    const iconMini = document.getElementById('plbMiniIcon');
     const btn = document.getElementById('btnCapture');
     if (accuracy === null) {
         bar.className = 'precision-lock-bar no-gps';
         bar.querySelector('.plb-icon').className = 'fas fa-lock-open plb-icon';
         status.textContent = 'Inicie o monitoramento GPS';
+        if (statusMini) statusMini.textContent = 'Aguardando GPS';
+        if (iconMini) { iconMini.className = 'fas fa-lock-open'; iconMini.style.color = 'var(--muted)'; }
         btn.disabled = false; // permite captura manual sem monitoramento
         return;
     }
@@ -1486,11 +1660,15 @@ function updatePrecisionLockBar(accuracy) {
         bar.className = 'precision-lock-bar locked';
         bar.querySelector('.plb-icon').className = 'fas fa-lock plb-icon';
         status.innerHTML = `<span class="plb-val">±${accuracy.toFixed(1)}m</span> ≤ ${precisionLimit}m <span style="opacity:0.7">✓ Pronto</span>`;
+        if (statusMini) statusMini.innerHTML = `±${accuracy.toFixed(1)}m ✓ Pronto`;
+        if (iconMini) { iconMini.className = 'fas fa-lock'; iconMini.style.color = 'var(--primary)'; }
         btn.disabled = false;
     } else {
         bar.className = 'precision-lock-bar waiting';
         bar.querySelector('.plb-icon').className = 'fas fa-lock-open plb-icon';
         status.innerHTML = `<span class="plb-val">±${accuracy.toFixed(1)}m</span> — aguardando ≤ ${precisionLimit}m`;
+        if (statusMini) statusMini.innerHTML = `±${accuracy.toFixed(1)}m — aguardando ≤ ${precisionLimit}m`;
+        if (iconMini) { iconMini.className = 'fas fa-lock-open'; iconMini.style.color = 'var(--warn)'; }
         btn.disabled = true;
     }
 }
@@ -1516,10 +1694,8 @@ async function savePrecisionLimit() {
 function setCoordSystem(sys){coordSystem=sys;updateCoordUI();renderAll();showToast(sys==='geographic'?'Sistema: Geográficas':`Sistema: UTM Zona ${utmZone}S`,'info');}
 function updateCoordUI(){
     const isUtm=coordSystem==='utm';
-    document.getElementById('optGeo').classList.toggle('active',!isUtm);
-    document.getElementById('optUtm').classList.toggle('active',isUtm);
-    document.getElementById('optGeo').querySelector('i').style.color=isUtm?'var(--muted)':'var(--primary)';
-    document.getElementById('optUtm').querySelector('i').style.color=isUtm?'var(--primary)':'var(--muted)';
+    ['optGeo','optGeoSettings'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.toggle('active',!isUtm);el.querySelector('i').style.color=isUtm?'var(--muted)':'var(--primary)';});
+    ['optUtm','optUtmSettings'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.toggle('active',isUtm);el.querySelector('i').style.color=isUtm?'var(--primary)':'var(--muted)';});
     document.getElementById('utmZoneWrap').style.display=isUtm?'block':'none';
     const zb=document.getElementById('zoneBadge');
     if(isUtm){zb.style.display='inline-flex';zb.textContent=`Zona ${utmZone}S`;}else zb.style.display='none';
@@ -1532,28 +1708,87 @@ function updateUTMZone(){utmZone=parseInt(document.getElementById('utmZoneSelect
 function captureLocation() {
     showGPSStatus('searching','Obtendo...');
     const btn=document.getElementById('btnCapture');
+    const fab=document.getElementById('capMapFab');
     btn.disabled=true;
     btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Obtendo...';
+    if(fab){fab.disabled=true;fab.innerHTML='<i class="fas fa-spinner fa-spin"></i>';}
     navigator.geolocation.getCurrentPosition(pos=>{
         const{latitude:lat,longitude:lng,accuracy,altitude}=pos.coords;
         const utm=toUTM(lat,lng,utmZone);
         const point={id:Date.now(),lat,lng,utmX:utm?.x||null,utmY:utm?.y||null,utmZone,accuracy,altitude,
             timestamp:new Date().toISOString(),name:`Ponto ${points.length+1}`,category:'other',description:'',
-            especie:'',usoSolo:'',dap:'',altura:'',fitossanidade:'',sessionId:currentSessionId,photos:[]};
+            especie:'',usoSolo:'',dap:'',altura:'',fitossanidade:'',sessionId:currentSessionId,photos:[],
+            captureType:currentCaptureType};
         points.unshift(point);
-        savePoints();renderAll();updateMainMap();
+        if(currentCaptureType==='line'){ lineCaptureIds.push(point.id); updateLiveLineStats(); }
+        savePoints();renderAll();updateMainMap();updateCaptureMapPoints();
         showGPSStatus('active','GPS Ativo');
         btn.disabled=false;
         btn.innerHTML='<i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização';
+        if(fab){fab.disabled=false;fab.innerHTML='<i class="fas fa-crosshairs" aria-hidden="true"></i>';}
         if(lastGPSAccuracy!==null) updatePrecisionLockBar(accuracy);
         showToast('Localização capturada'+(accuracy<5?' (Excelente!)':accuracy<10?' (Boa)':''),'success');
     },err=>{
         showGPSStatus('inactive','Erro');
         btn.disabled=false;
         btn.innerHTML='<i class="fas fa-crosshairs" style="font-size:20px"></i> Capturar Localização';
+        if(fab){fab.disabled=false;fab.innerHTML='<i class="fas fa-crosshairs" aria-hidden="true"></i>';}
         showToast('Erro: '+err.message,'error');
     },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
 }
+
+// ═══════════════════════════════════════════════════
+//  TIPO DE CAPTURA — Ponto / Linha / Polígono
+// ═══════════════════════════════════════════════════
+let currentCaptureType = 'point';
+let lineCaptureIds = [];
+function setCaptureType(type){
+    currentCaptureType = type;
+    ['point','line','polygon'].forEach(t=>{
+        const b=document.getElementById('capTypeBtn'+t.charAt(0).toUpperCase()+t.slice(1));
+        if(b) b.classList.toggle('active', t===type);
+    });
+    const lineBox = document.getElementById('lineStatsBox');
+    if(type==='line'){
+        lineCaptureIds = [];
+        lineBox.style.display='block';
+        updateLiveLineStats();
+        showToast('Modo Linha: cada ponto capturado será somado ao traçado atual','info');
+    } else if(type==='polygon'){
+        lineBox.style.display='none';
+        showToast('Modo Polígono: capture os vértices e finalize na aba Trabalho → Área','info');
+    } else {
+        lineBox.style.display='none';
+    }
+}
+function updateLiveLineStats(){
+    const box = document.getElementById('lineStatsBox');
+    if(!box) return;
+    const pts = lineCaptureIds.map(id=>points.find(p=>p.id===id)).filter(Boolean);
+    if(pts.length===0){
+        box.innerHTML = `<div class="section-label" style="padding:0 0 8px"><i class="fas fa-route" style="color:var(--tertiary)"></i> Linha em coleta</div><div class="empty-state" style="padding:14px"><small>Capture o 1º ponto da linha</small></div>`;
+        return;
+    }
+    if(pts.length<2){
+        box.innerHTML = `<div class="section-label" style="padding:0 0 8px"><i class="fas fa-route" style="color:var(--tertiary)"></i> Linha em coleta — 1 ponto</div><div class="empty-state" style="padding:14px"><small>Capture o 2º ponto para calcular a distância</small></div>`;
+        return;
+    }
+    let cum=0;
+    for(let i=0;i<pts.length-1;i++) cum += haversineDistance(pts[i].lat,pts[i].lng,pts[i+1].lat,pts[i+1].lng);
+    const lastSeg = haversineDistance(pts[pts.length-2].lat,pts[pts.length-2].lng,pts[pts.length-1].lat,pts[pts.length-1].lng);
+    const straight = haversineDistance(pts[0].lat,pts[0].lng,pts[pts.length-1].lat,pts[pts.length-1].lng);
+    box.innerHTML = `
+        <div class="section-label" style="padding:0 0 8px"><i class="fas fa-route" style="color:var(--tertiary)"></i> Linha em coleta — ${pts.length} pontos</div>
+        <div class="stats-row">
+            <div class="stat-box"><div class="stat-value" style="font-size:15px">${formatDist(lastSeg)}</div><div class="stat-label">Últ. segmento</div></div>
+            <div class="stat-box"><div class="stat-value" style="font-size:15px">${formatDist(cum)}</div><div class="stat-label">Acumulada</div></div>
+            <div class="stat-box"><div class="stat-value" style="font-size:15px">${formatDist(straight)}</div><div class="stat-label">1º→últ. (reta)</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px;font-weight:500;line-height:1.5">
+            Quer medir entre outros dois pontos da linha? Use a seção <strong style="color:var(--text)">Medição de Distância</strong> abaixo e selecione os pontos desejados.
+        </div>`;
+}
+
 
 function startTracking() {
     if(isTracking){stopTracking();return;}
@@ -1647,6 +1882,7 @@ function initAreaMap(){
 }
 function updateMainMap(){
     if(!map)return;
+    updateCaptureMapPoints();
     markers.forEach(m=>map.removeLayer(m));markers=[];
     // camada importada
     if(importedLayer){try{importedLayer.addTo(map);}catch(e){}}
@@ -1661,7 +1897,53 @@ function updateMainMap(){
     map.fitBounds(group.getBounds().pad(0.1));
 }
 function centerMap(){if(markers.length===0)return;map.fitBounds(L.featureGroup(markers).getBounds().pad(0.1));}
-function focusPoint(lat,lng){switchTab('map');setTimeout(()=>{if(map)map.setView([lat,lng],16);},150);}
+function wsCenter(){ if(wsMode==='points'){ centerMap(); } else if(mapArea && selectedPoints.length){ updateAreaMap(); } }
+function focusPoint(lat,lng){switchTab('workspace');wsSetMode('points');setTimeout(()=>{if(map)map.setView([lat,lng],16);},150);}
+
+// ═══════════════════════════════════════════════════
+//  MAPA DA ABA CAPTURAR — mapa base + posição em tempo real
+// ═══════════════════════════════════════════════════
+let mapCapture=null, capBasemapLayer=null, capLabelsLayer=null, capGpsMarker=null, capMarkers=[];
+const capBasemaps = {
+    streets:   () => L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}),
+    satellite: () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri, Maxar, Earthstar Geographics'}),
+    hybrid:    () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri, Maxar, Earthstar Geographics'})
+};
+function initCaptureMap(){
+    if(!document.getElementById('mapCapture')) return;
+    mapCapture = L.map('mapCapture',{zoomControl:false,attributionControl:false}).setView([-11.7286,-49.0686],15);
+    setCaptureBasemap('streets');
+    L.control.zoom({position:'bottomright'}).addTo(mapCapture);
+    updateCaptureMapPoints();
+}
+function setCaptureBasemap(type){
+    if(!mapCapture) return;
+    if(capBasemapLayer) mapCapture.removeLayer(capBasemapLayer);
+    if(capLabelsLayer){ mapCapture.removeLayer(capLabelsLayer); capLabelsLayer=null; }
+    capBasemapLayer = capBasemaps[type]().addTo(mapCapture);
+    if(type==='hybrid'){
+        capLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'}).addTo(mapCapture);
+    }
+    document.querySelectorAll('.cap-basemap-btn').forEach(b=>b.classList.toggle('active', b.dataset.basemap===type));
+}
+function updateCaptureMapPoints(){
+    if(!mapCapture) return;
+    capMarkers.forEach(m=>mapCapture.removeLayer(m)); capMarkers=[];
+    points.slice(0,80).forEach((p,i)=>{
+        const m=L.circleMarker([p.lat,p.lng],{radius:6,fillColor:i===0?'#82D8C8':'#A9C7FF',color:'#fff',weight:1.5,fillOpacity:0.9}).addTo(mapCapture);
+        m.bindPopup(`<b style="color:#1e293b">${p.name}</b>`);
+        capMarkers.push(m);
+    });
+}
+function updateCaptureMapPosition(lat,lng){
+    if(!mapCapture) return;
+    if(!capGpsMarker){
+        capGpsMarker = L.circleMarker([lat,lng],{radius:9,fillColor:'#2E7D32',color:'#fff',weight:2,fillOpacity:0.95,className:'cap-gps-dot'}).addTo(mapCapture);
+        mapCapture.setView([lat,lng],17);
+    } else {
+        capGpsMarker.setLatLng([lat,lng]);
+    }
+}
 
 // ═══════════════════════════════════════════════════
 //  IMPORT KML / GEOJSON
@@ -1744,7 +2026,7 @@ function addImportedLayer(geojson, filename, ext) {
         pointToLayer: (f,ll) => L.circleMarker(ll, {radius:6,fillColor:'#E65100',color:'#fff',weight:1.5,fillOpacity:0.9}),
         onEachFeature: (f, l) => { if(f.properties?.name) l.bindPopup(`<b>${f.properties.name}</b>`); }
     });
-    if (currentTab === 'map') { importedLayer.addTo(map); }
+    if (currentTab === 'workspace' && wsMode === 'points') { importedLayer.addTo(map); }
 
     // UI info
     const fCount = geojson.features ? geojson.features.length : 0;
@@ -1752,7 +2034,7 @@ function addImportedLayer(geojson, filename, ext) {
     document.getElementById('importLayerName').textContent = filename;
     document.getElementById('importLayerMeta').textContent = `${fCount} feições · ${ext.toUpperCase()}`;
 
-    if (currentTab === 'map' && geojson.features?.length > 0) {
+    if (currentTab === 'workspace' && wsMode === 'points' && geojson.features?.length > 0) {
         setTimeout(()=>{ try{map.fitBounds(importedLayer.getBounds().pad(0.1));}catch(e){} }, 200);
     }
     showToast(`Camada importada: ${fCount} feições`, 'success');
@@ -2070,14 +2352,14 @@ async function saveSession(){
     updateBadges();renderSessionsList();showToast(`Sessão "${currentSessionName}" salva!`,'success');
 }
 async function newSession(){
-    if(points.length>0&&!confirm('Iniciar nova sessão? Os pontos atuais serão mantidos na sessão salva.'))return;
+    if(points.length>0&&!confirm('Iniciar novo projeto? Os pontos atuais serão mantidos no projeto salvo.'))return;
     await saveSession();
     currentSessionId=Date.now().toString();
     currentSessionName='Sessão '+new Date().toLocaleDateString('pt-BR')+' #'+sessions.length;
     points=[];selectedPoints=[];lastCalculatedArea=null;areasCalcCount=0;
     try{await dbClear('points');}catch(e){}
     await savePoints();
-    renderAll();updateMainMap();updateAreaMap();updateSessionDisplay();showToast('Nova sessão iniciada!','success');
+    renderAll();updateMainMap();updateAreaMap();updateSessionDisplay();showToast('Novo projeto iniciado!','success');
 }
 async function loadSession(id){
     const s=sessions.find(s=>s.id===id);if(!s)return;
@@ -2090,13 +2372,13 @@ async function loadSession(id){
     }catch(e){}
     await savePoints();
     renderAll();updateMainMap();if(mapArea)updateAreaMap();updateSessionDisplay();
-    switchTab('capture');showToast(`Sessão "${s.name}" carregada!`,'success');
+    switchTab('capture');showToast(`Projeto "${s.name}" carregado!`,'success');
 }
 async function deleteSession(id){
-    const s=sessions.find(s=>s.id===id);if(!s||!confirm(`Excluir sessão "${s.name}"?`))return;
+    const s=sessions.find(s=>s.id===id);if(!s||!confirm(`Excluir projeto "${s.name}"?`))return;
     sessions=sessions.filter(s=>s.id!==id);
     await saveSessions();
-    updateBadges();renderSessionsList();showToast('Sessão excluída','info');
+    updateBadges();renderSessionsList();showToast('Projeto excluído','info');
 }
 function renameSession(){openSessionModal(name=>{currentSessionName=name;savePoints();updateSessionDisplay();showToast('Sessão renomeada!','success');});}
 function openSessionModal(callback){sessionRenameCallback=callback;document.getElementById('sessionNameInput').value=currentSessionName;document.getElementById('sessionModal').classList.add('open');setTimeout(()=>document.getElementById('sessionNameInput').focus(),300);}
@@ -2104,7 +2386,7 @@ function closeSessionModal(){document.getElementById('sessionModal').classList.r
 function confirmSessionName(){const name=document.getElementById('sessionNameInput').value.trim();if(!name){showToast('Digite um nome','error');return;}if(sessionRenameCallback)sessionRenameCallback(name);closeSessionModal();}
 function renderSessionsList(){
     const c=document.getElementById('sessionsList');
-    if(sessions.length===0){c.innerHTML='<div class="empty-state"><i class="fas fa-history"></i><p>Nenhuma sessão salva</p><small>Salve a sessão atual para acessar depois</small></div>';return;}
+    if(sessions.length===0){c.innerHTML='<div class="empty-state"><i class="fas fa-history"></i><p>Nenhum projeto salvo</p><small>Salve o projeto atual para acessar depois</small></div>';return;}
     c.innerHTML=sessions.map(s=>{
         const date=new Date(s.savedAt).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
         const isCurrent=s.id===currentSessionId;
@@ -2139,13 +2421,13 @@ function buildPointsText(){
         lines.push(`🎯 Precisão: ±${Math.round(p.accuracy)}m`);lines.push('');
     });
     if(points.length>15)lines.push(`... e mais ${points.length-15} pontos.`);
-    lines.push('---');lines.push('UFT · Agronomia · Eng. Florestal · Gurupi');
+    lines.push('---');lines.push('UFT · Agronomia · Gurupi');
     return lines.join('\n');
 }
 function buildAreaText(){
     if(!lastCalculatedArea)return null;
     const{area_ha,area_m2,perimeter,vertices,zone}=lastCalculatedArea;
-    return `📐 *Cálculo de Área — GeoCollector UFT*\n🗓 ${new Date().toLocaleString('pt-BR')}\n\n*Resultado:*\n• Área: ${area_ha.toFixed(4)} ha\n• Área: ${area_m2.toFixed(2)} m²\n• Perímetro: ${perimeter.toFixed(2)} m\n• Vértices: ${vertices}\n• Zona UTM: ${zone}S (SIRGAS 2000)\n\n---\nUFT · Agronomia · Eng. Florestal · Gurupi`;
+    return `📐 *Cálculo de Área — GeoCollector UFT*\n🗓 ${new Date().toLocaleString('pt-BR')}\n\n*Resultado:*\n• Área: ${area_ha.toFixed(4)} ha\n• Área: ${area_m2.toFixed(2)} m²\n• Perímetro: ${perimeter.toFixed(2)} m\n• Vértices: ${vertices}\n• Zona UTM: ${zone}S (SIRGAS 2000)\n\n---\nUFT · Agronomia · Gurupi`;
 }
 function shareWhatsApp(){const text=buildPointsText();if(!text){showToast('Nenhum dado para compartilhar','error');return;}window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');}
 function shareEmail(){const text=buildPointsText();if(!text){showToast('Nenhum dado para compartilhar','error');return;}const subject=encodeURIComponent(`GeoCollector UFT — ${currentSessionName}`);const body=encodeURIComponent(text.replace(/\*/g,''));window.location.href=`mailto:?subject=${subject}&body=${body}`;}
@@ -2192,7 +2474,7 @@ function generateReport(){
             <div class="report-info-grid">
                 <div class="report-info-row"><span class="report-info-label">Instituição</span><span class="report-info-val">Universidade Federal do Tocantins</span></div>
                 <div class="report-info-row"><span class="report-info-label">Campus</span><span class="report-info-val">Campus Universitário de Gurupi</span></div>
-                <div class="report-info-row"><span class="report-info-label">Cursos</span><span class="report-info-val">Agronomia / Engenharia Florestal</span></div>
+                <div class="report-info-row"><span class="report-info-label">Cursos</span><span class="report-info-val">Agronomia</span></div>
                 <div class="report-info-row"><span class="report-info-label">Disciplina</span><span class="report-info-val">Sensoriamento Remoto e SIG</span></div>
                 <div class="report-info-row"><span class="report-info-label">Professor</span><span class="report-info-val">Prof. Dsc. Jacinto Pereira Santos</span></div>
                 <div class="report-info-row"><span class="report-info-label">Sessão</span><span class="report-info-val">${currentSessionName}</span></div>
@@ -2237,7 +2519,7 @@ function exportData(format){
     if(points.length===0){showToast('Nenhum dado para exportar','error');return;}
     const ts=new Date().toISOString().split('T')[0];let content,mime,fname;
     if(format==='geojson'){
-        const gj={type:'FeatureCollection',features:points.map(p=>({type:'Feature',properties:{name:p.name,category:p.category,description:p.description,accuracy:p.accuracy,timestamp:p.timestamp,institution:'UFT',course:'Agronomia/Eng.Florestal',discipline:'Sensoriamento Remoto e SIG',campus:'Gurupi',utm_x:p.utmX,utm_y:p.utmY,utm_zone:p.utmZone,especie:p.especie||'',uso_solo:p.usoSolo||'',dap_cm:p.dap||'',altura_m:p.altura||'',fitossanidade:p.fitossanidade||'',photo_count:(p.photos||[]).length},geometry:{type:'Point',coordinates:[p.lng,p.lat,p.altitude||0]}}))}
+        const gj={type:'FeatureCollection',features:points.map(p=>({type:'Feature',properties:{name:p.name,category:p.category,description:p.description,accuracy:p.accuracy,timestamp:p.timestamp,institution:'UFT',course:'Agronomia',discipline:'Sensoriamento Remoto e SIG',campus:'Gurupi',utm_x:p.utmX,utm_y:p.utmY,utm_zone:p.utmZone,especie:p.especie||'',uso_solo:p.usoSolo||'',dap_cm:p.dap||'',altura_m:p.altura||'',fitossanidade:p.fitossanidade||'',photo_count:(p.photos||[]).length},geometry:{type:'Point',coordinates:[p.lng,p.lat,p.altitude||0]}}))}
         content=JSON.stringify(gj,null,2);mime='application/geo+json';fname=`pontos-uft-${ts}.geojson`;
     }else{
         const h=['ID','Nome','Latitude','Longitude','UTM_X','UTM_Y','UTM_Zona','Precisao_m','Categoria','Descricao','Especie','UsoSolo','DAP_cm','Altura_m','Fitossanidade','Fotos','DataHora'];
@@ -2312,7 +2594,7 @@ function exportPolygon(format){
     switch(format){
         case 'geojson':{const coords=pp.map(p=>[p.lng,p.lat]);coords.push(coords[0]);const gj={type:'FeatureCollection',features:[{type:'Feature',properties:{area_m2,area_ha,perimeter,vertices,utm_zone:zone,datum:'SIRGAS 2000',calculated_at:new Date().toISOString(),institution:'UFT',campus:'Gurupi',professor:'Prof. Dsc. Jacinto Pereira Santos'},geometry:{type:'Polygon',coordinates:[coords]}}]};content=JSON.stringify(gj,null,2);mime='application/geo+json';fname=`poligono-uft-${ts}.geojson`;break;}
         case 'csv':{const h=['Vertice','Nome','Lat','Lng','UTM_X','UTM_Y','Precisao_m'];const rows=pp.map((p,i)=>[i+1,`"${p.name}"`,p.lat,p.lng,p.utmX,p.utmY,p.accuracy]);rows.push(['','','','','','',''],['Area_m2',area_m2,'','','','',''],['Area_ha',area_ha,'','','','',''],['Perimetro_m',perimeter,'','','','','']);content=[h.join(','),...rows.map(r=>r.join(','))].join('\n');mime='text/csv';fname=`vertices-uft-${ts}.csv`;break;}
-        case 'report':{content=`RELATÓRIO DE CÁLCULO DE ÁREA\n${'='.repeat(50)}\nInstituição: UFT - Universidade Federal do Tocantins\nCurso: Agronomia / Engenharia Florestal — Campus Gurupi\nDisciplina: Sensoriamento Remoto e SIG\nProfessor: Prof. Dsc. Jacinto Pereira Santos\nSessão: ${currentSessionName}\nData: ${new Date().toLocaleString('pt-BR')}\n\nPOLÍGONO\n${'-'.repeat(50)}\nÁrea:      ${area_m2.toFixed(2)} m²\nÁrea:      ${area_ha.toFixed(4)} ha\nPerímetro: ${perimeter.toFixed(2)} m\nVértices:  ${vertices}\nZona UTM:  ${zone}S (SIRGAS 2000)\n\nVÉRTICES\n${'-'.repeat(50)}\n${pp.map((p,i)=>`\n${i+1}. ${p.name}\n  Lat: ${p.lat.toFixed(6)}°  Lng: ${p.lng.toFixed(6)}°\n  UTM X: ${p.utmX.toFixed(2)} m  UTM Y: ${p.utmY.toFixed(2)} m\n  Precisão: ±${p.accuracy} m${p.especie?'\n  Espécie: '+p.especie:''}${p.dap?'\n  DAP: '+p.dap+' cm':''}${p.altura?'\n  Altura: '+p.altura+' m':''}`).join('\n')}\n\nMETODOLOGIA\n${'-'.repeat(50)}\nFórmula de Shoelace (Gauss) em coordenadas UTM.\n\nResponsável: _________________________\nData: _________________________\n`;mime='text/plain';fname=`relatorio-uft-${ts}.txt`;break;}
+        case 'report':{content=`RELATÓRIO DE CÁLCULO DE ÁREA\n${'='.repeat(50)}\nInstituição: UFT - Universidade Federal do Tocantins\nCurso: Agronomia — Campus Gurupi\nDisciplina: Sensoriamento Remoto e SIG\nProfessor: Prof. Dsc. Jacinto Pereira Santos\nSessão: ${currentSessionName}\nData: ${new Date().toLocaleString('pt-BR')}\n\nPOLÍGONO\n${'-'.repeat(50)}\nÁrea:      ${area_m2.toFixed(2)} m²\nÁrea:      ${area_ha.toFixed(4)} ha\nPerímetro: ${perimeter.toFixed(2)} m\nVértices:  ${vertices}\nZona UTM:  ${zone}S (SIRGAS 2000)\n\nVÉRTICES\n${'-'.repeat(50)}\n${pp.map((p,i)=>`\n${i+1}. ${p.name}\n  Lat: ${p.lat.toFixed(6)}°  Lng: ${p.lng.toFixed(6)}°\n  UTM X: ${p.utmX.toFixed(2)} m  UTM Y: ${p.utmY.toFixed(2)} m\n  Precisão: ±${p.accuracy} m${p.especie?'\n  Espécie: '+p.especie:''}${p.dap?'\n  DAP: '+p.dap+' cm':''}${p.altura?'\n  Altura: '+p.altura+' m':''}`).join('\n')}\n\nMETODOLOGIA\n${'-'.repeat(50)}\nFórmula de Shoelace (Gauss) em coordenadas UTM.\n\nResponsável: _________________________\nData: _________________________\n`;mime='text/plain';fname=`relatorio-uft-${ts}.txt`;break;}
     }
     if(content){downloadFile(content,mime,fname);showToast(`Exportado como ${format.toUpperCase()}!`,'success');}
 }
@@ -2418,7 +2700,7 @@ const OB_STEPS = [
         icon: '📍',
         title: 'Bem-vindo ao GeoCollector',
         desc: 'Ferramenta de coleta GPS de campo para Sensoriamento Remoto e SIG — UFT Campus Gurupi.',
-        tip: '🎓 Desenvolvido para Agronomia e Engenharia Florestal'
+        tip: '🎓 Desenvolvido para o Curso de Agronomia'
     },
     {
         icon: '🛰️',
@@ -2540,7 +2822,7 @@ function startTrackLog() {
         trackLogPoints.push(pt);
         updateTrackLogUI(accuracy);
         // Draw on map
-        if (map && currentTab === 'map') drawTrackLogOnMap();
+        if (map && currentTab === 'workspace' && wsMode === 'points') drawTrackLogOnMap();
     }, err => { showToast('Erro trilha: ' + err.message, 'error'); },
     { enableHighAccuracy: true, maximumAge: 0 });
 
@@ -2607,7 +2889,7 @@ function exportTrackLog(format) {
             `      <extensions><accuracy>${p.accuracy.toFixed(1)}</accuracy></extensions>\n` +
             `    </trkpt>`
         ).join('\n');
-        content = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="GeoCollector UFT v5.0" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata>\n    <name>${currentSessionName}</name>\n    <desc>Trilha registrada pelo GeoCollector UFT — Campus Gurupi</desc>\n    <time>${new Date().toISOString()}</time>\n  </metadata>\n  <trk>\n    <name>${currentSessionName}</name>\n    <desc>Prof. Dsc. Jacinto Pereira Santos — UFT Agronomia/Eng.Florestal</desc>\n    <trkseg>\n${trkpts}\n    </trkseg>\n  </trk>\n</gpx>`;
+        content = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="GeoCollector UFT v5.0" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata>\n    <name>${currentSessionName}</name>\n    <desc>Trilha registrada pelo GeoCollector UFT — Campus Gurupi</desc>\n    <time>${new Date().toISOString()}</time>\n  </metadata>\n  <trk>\n    <name>${currentSessionName}</name>\n    <desc>Prof. Dsc. Jacinto Pereira Santos — UFT Agronomia</desc>\n    <trkseg>\n${trkpts}\n    </trkseg>\n  </trk>\n</gpx>`;
         mime = 'application/gpx+xml'; fname = `trilha-${sessionLabel}-${ts}.gpx`;
     } else if (format === 'kml') {
         const coords = trackLogPoints.map(p => `${p.lng},${p.lat},${p.altitude||0}`).join('\n            ');
@@ -2725,7 +3007,7 @@ function exportDistanceMeasure(format) {
             '-'.repeat(40),
             ...pts.map((p,i)=>`${i+1}. ${p.name} | Lat:${p.lat.toFixed(6)} Lng:${p.lng.toFixed(6)} | ±${Math.round(p.accuracy)}m`),
             '',
-            'UFT · Agronomia · Engenharia Florestal · Gurupi',
+            'UFT · Agronomia · Gurupi',
             'Prof. Dsc. Jacinto Pereira Santos'
         ];
         content = lines.join('\n'); mime = 'text/plain'; fname = `medicao-dist-${ts}.txt`;
@@ -2752,7 +3034,7 @@ function shareDistanceMeasure() {
         ...segments.map((s,i)=>`${i+1}. ${s.from} → ${s.to}: ${s.dist.toFixed(1)}m`),
         ``,
         `---`,
-        `UFT · Agronomia · Eng. Florestal · Gurupi`
+        `UFT · Agronomia · Gurupi`
     ];
     window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
 }
@@ -2782,7 +3064,7 @@ function applyTheme(theme){
     if(theme==='dark'){html.setAttribute('data-theme','dark');if(icon)icon.className='fas fa-sun';if(metaTheme)metaTheme.setAttribute('content','#0F1416');}
     else{html.removeAttribute('data-theme');if(icon)icon.className='fas fa-moon';if(metaTheme)metaTheme.setAttribute('content','#F6F8F9');}
     localStorage.setItem('geocollector-theme',theme);
-    try{if(window.map)window.map.invalidateSize();if(window.mapArea)window.mapArea.invalidateSize();}catch(e){}
+    try{if(window.map)window.map.invalidateSize();if(window.mapArea)window.mapArea.invalidateSize();if(window.mapCapture)window.mapCapture.invalidateSize();}catch(e){}
 }
 function toggleTheme(){
     const current=document.documentElement.getAttribute('data-theme');
