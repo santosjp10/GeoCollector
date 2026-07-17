@@ -198,6 +198,7 @@
 
         /* ═══ ÁREA DE TRABALHO (mapa unificado + painel flutuante) ═══ */
         .ws-screen { position:relative;margin:-12px -16px 0;padding:0;height:calc(100dvh - 64px - 62px - var(--safe-top) - var(--safe-bottom)); }
+        .screen.active.ws-screen { display:flex;flex-direction:column; }
         .ws-map-stage { position:absolute;inset:0;background:var(--card-high);overflow:hidden; }
         .ws-map-layer { position:absolute;inset:0;width:100%;height:100%;display:none; }
         .ws-map-layer.active { display:block; }
@@ -205,7 +206,7 @@
         .ws-mode-btn { border:none;background:transparent;color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;padding:8px 14px;border-radius:var(--shape-full);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s; }
         .ws-mode-btn.active { background:var(--primary);color:var(--on-primary); }
         .ws-map-icon-btn { position:absolute;top:12px;right:12px;z-index:900;width:38px;height:38px;border-radius:50%;background:var(--surface);border:none;box-shadow:var(--elev-2);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px; }
-        .ws-panel-fab { position:absolute;bottom:16px;right:16px;z-index:920;width:52px;height:52px;border-radius:50%;background:var(--primary);color:var(--on-primary);border:none;box-shadow:var(--elev-3);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
+        .ws-panel-fab { position:absolute;bottom:84px;right:16px;z-index:920;width:52px;height:52px;border-radius:50%;background:var(--primary);color:var(--on-primary);border:none;box-shadow:var(--elev-3);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
         .ws-floating-panel { position:absolute;left:8px;right:8px;bottom:8px;max-height:48%;z-index:910;background:var(--surface);border-radius:var(--shape-xl);box-shadow:var(--elev-3);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border); }
         .ws-panel-handle { flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px 6px;cursor:pointer;color:var(--muted);font-size:11px;font-weight:700; }
         .ws-handle-bar { position:absolute;left:50%;top:6px;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:var(--border); }
@@ -217,10 +218,30 @@
         .cap-basemap-switch { position:absolute;top:12px;left:12px;z-index:900;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--shape-md);box-shadow:var(--elev-2);padding:4px;gap:4px; }
         .cap-basemap-btn { border:none;background:transparent;color:var(--muted);width:32px;height:32px;border-radius:var(--shape-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px; }
         .cap-basemap-btn.active { background:var(--primary);color:var(--on-primary); }
-        .cap-map-fab { position:absolute;bottom:16px;right:16px;z-index:930;width:60px;height:60px;border-radius:50%;background:var(--primary);color:var(--on-primary);border:none;box-shadow:var(--elev-3);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
+        .cap-precision-btn { top:60px;right:12px; }
+        .cap-precision-btn.locked { color:var(--primary); }
+        .cap-precision-btn.waiting { color:var(--warn); }
+        .cap-map-fab { position:absolute;bottom:84px;right:16px;z-index:930;width:60px;height:60px;border-radius:50%;background:var(--primary);color:var(--on-primary);border:none;box-shadow:var(--elev-3);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
         .cap-map-fab:disabled { opacity:0.6; }
         .ws-panel-fab-left { left:16px;right:auto; }
         #capFloatingPanel { right:84px; }
+
+        /* Faixa compacta de status GPS — 2 linhas, logo abaixo do cabeçalho */
+        .cap-gps-strip { flex-shrink:0;background:var(--surface);border-bottom:2px solid var(--border);padding:6px 16px 7px;transition:border-color 0.3s;position:relative;z-index:5; }
+        .cap-gps-strip.acc-excellent { border-bottom-color:rgba(46,125,50,0.55); }
+        .cap-gps-strip.acc-good { border-bottom-color:rgba(46,125,50,0.3); }
+        .cap-gps-strip.acc-medium { border-bottom-color:rgba(230,81,0,0.35); }
+        .cap-gps-strip.acc-poor { border-bottom-color:rgba(176,0,32,0.35); }
+        .cap-gps-strip-row { display:flex;align-items:center;gap:16px;padding:2px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none; }
+        .cap-gps-strip-row::-webkit-scrollbar { display:none; }
+        .cap-gps-item { display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;flex-shrink:0; }
+        .cap-gps-item i { color:var(--tertiary);font-size:10px; }
+        .cap-gps-item span, .cap-gps-item .stat-value { color:var(--text);font-family:'Fira Code',monospace;font-weight:700;font-size:11px; }
+
+        /* Na Captura, o mapa preenche o espaço restante abaixo da faixa GPS (em vez de cobrir a tela toda) */
+        #screen-capture.ws-screen { padding-top:0; }
+        #screen-capture .ws-map-stage { position:relative;inset:auto;flex:1 1 auto; }
+
 
         /* IMPORT DROP ZONE */
         .import-drop-zone { border:2px dashed var(--border);border-radius:var(--shape-xl);padding:28px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--card-high); }
@@ -524,6 +545,19 @@
 
         <!-- ══ SCREEN 1: CAPTURAR ══ -->
         <div class="screen active ws-screen" id="screen-capture">
+            <div class="cap-gps-strip" id="gpsMonitor">
+                <div class="cap-gps-strip-row">
+                    <span class="cap-gps-item"><i class="fas fa-globe" aria-hidden="true"></i><span id="liveLat">--</span>, <span id="liveLng">--</span></span>
+                    <span class="cap-gps-item"><i class="fas fa-map" aria-hidden="true"></i><span id="liveUtm">--</span></span>
+                </div>
+                <div class="cap-gps-strip-row">
+                    <span class="cap-gps-item"><i class="fas fa-crosshairs" aria-hidden="true"></i><span id="liveAccuracy">--</span>m</span>
+                    <span class="cap-gps-item"><i class="fas fa-satellite-dish" aria-hidden="true"></i><span id="liveSatellites">--</span></span>
+                    <span class="cap-gps-item" id="accQuality"><i class="fas fa-signal" aria-hidden="true"></i><span class="stat-value">--</span></span>
+                </div>
+                <span id="accTip" style="display:none"></span>
+            </div>
+
             <div class="ws-map-stage">
                 <div id="mapCapture" class="cap-map-full"></div>
 
@@ -550,6 +584,10 @@
                     <i class="fas fa-location-arrow" aria-hidden="true"></i>
                 </button>
 
+                <button id="capPrecisionIcon" onclick="switchTab('settings')" class="ws-map-icon-btn cap-precision-btn" title="Trava de Precisão — toque para configurar" aria-label="Status da trava de precisão GPS. Toque para abrir Configurações">
+                    <i class="fas fa-lock-open" id="capPrecisionIconI" aria-hidden="true"></i>
+                </button>
+
                 <button class="ws-panel-fab ws-panel-fab-left" id="capPanelFab" onclick="capOpenPanel()" style="display:none" aria-label="Abrir painel de dados da captura">
                     <i class="fas fa-info-circle" aria-hidden="true"></i>
                 </button>
@@ -568,10 +606,7 @@
                 </div>
                 <div class="ws-panel-body">
 
-                    <div class="btn-group" style="margin:12px 0 4px">
-                        <button id="btnTrack" onclick="startTracking()" class="btn btn-ghost btn-sm" aria-label="Iniciar rastreamento automático de pontos">
-                            <i class="fas fa-play" style="color:var(--accent)" aria-hidden="true"></i> Rastrear
-                        </button>
+                    <div style="margin:12px 0 4px">
                         <button onclick="clearAllPoints()" class="btn btn-danger-ghost btn-sm" aria-label="Limpar todos os pontos coletados">
                             <i class="fas fa-trash-alt" aria-hidden="true"></i> Limpar Tudo
                         </button>
@@ -596,32 +631,6 @@
 
                     <div id="capInfoPolygon" style="display:none">
                         <div id="polygonStatsBox" class="card" style="padding:14px;margin-top:12px"></div>
-                    </div>
-
-                    <p class="section-label" style="margin-top:16px">Status GPS <span style="font-weight:500;color:var(--muted);font-size:9px;text-transform:none">(automático)</span></p>
-                    <div id="gpsMonitor" class="gps-monitor">
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-                            <div class="live-dot"></div>
-                            <span style="font-size:14px;font-weight:800;color:var(--accent)">GPS em Tempo Real</span>
-                        </div>
-                        <div>
-                            <div class="coord-row"><span class="coord-label">Geográficas</span><span class="coord-val"><span id="liveLat">--</span>, <span id="liveLng">--</span></span></div>
-                            <div class="coord-row"><span class="coord-label">UTM (X, Y)</span><span id="liveUtm" class="coord-val" style="color:var(--accent)">--</span></div>
-                        </div>
-                        <div class="stats-row" style="margin:14px 0">
-                            <div class="stat-box"><div id="liveAccuracy" class="stat-value" style="font-size:20px">--</div><div class="stat-label">Precisão (m)</div></div>
-                            <div class="stat-box"><div id="liveSatellites" class="stat-value" style="font-size:20px">--</div><div class="stat-label">Satélites</div></div>
-                            <div class="stat-box" id="accQuality"><div class="stat-value" style="font-size:20px">--</div><div class="stat-label">Qualidade</div></div>
-                        </div>
-                        <div class="coord-row" style="border:none"><span class="coord-label" id="accTip" style="font-size:11px">Iniciando...</span></div>
-                    </div>
-
-                    <div class="card" style="margin-top:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px" id="precisionLockMini">
-                        <div style="display:flex;align-items:center;gap:10px;min-width:0">
-                            <i class="fas fa-lock-open" id="plbMiniIcon" style="color:var(--muted)"></i>
-                            <div style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trava de Precisão: <span id="plbStatusMini" style="color:var(--text)">Aguardando GPS</span></div>
-                        </div>
-                        <button class="icon-btn" onclick="switchTab('settings')" title="Configurar em Configurações" style="flex-shrink:0"><i class="fas fa-sliders-h"></i></button>
                     </div>
 
                     <div style="padding-bottom:12px"></div>
@@ -1639,15 +1648,15 @@ function updatePrecisionLockBar(accuracy) {
     lastGPSAccuracy = accuracy;
     const bar = document.getElementById('precisionLockBar');
     const status = document.getElementById('plbStatus');
-    const statusMini = document.getElementById('plbStatusMini');
-    const iconMini = document.getElementById('plbMiniIcon');
+    const capIcon = document.getElementById('capPrecisionIcon');
+    const capIconI = document.getElementById('capPrecisionIconI');
     const btn = document.getElementById('capMapFab');
     if (accuracy === null) {
         bar.className = 'precision-lock-bar no-gps';
         bar.querySelector('.plb-icon').className = 'fas fa-lock-open plb-icon';
         status.textContent = 'Inicie o monitoramento GPS';
-        if (statusMini) statusMini.textContent = 'Aguardando GPS';
-        if (iconMini) { iconMini.className = 'fas fa-lock-open'; iconMini.style.color = 'var(--muted)'; }
+        if (capIcon) { capIcon.className = 'ws-map-icon-btn cap-precision-btn'; capIcon.title = 'Trava de Precisão: aguardando GPS — toque para configurar'; }
+        if (capIconI) capIconI.className = 'fas fa-lock-open';
         if (btn) btn.disabled = false; // permite captura manual sem monitoramento
         return;
     }
@@ -1655,15 +1664,15 @@ function updatePrecisionLockBar(accuracy) {
         bar.className = 'precision-lock-bar locked';
         bar.querySelector('.plb-icon').className = 'fas fa-lock plb-icon';
         status.innerHTML = `<span class="plb-val">±${accuracy.toFixed(1)}m</span> ≤ ${precisionLimit}m <span style="opacity:0.7">✓ Pronto</span>`;
-        if (statusMini) statusMini.innerHTML = `±${accuracy.toFixed(1)}m ✓ Pronto`;
-        if (iconMini) { iconMini.className = 'fas fa-lock'; iconMini.style.color = 'var(--primary)'; }
+        if (capIcon) { capIcon.className = 'ws-map-icon-btn cap-precision-btn locked'; capIcon.title = `Trava de Precisão ativa (±${accuracy.toFixed(1)}m ≤ ${precisionLimit}m) — toque para configurar`; }
+        if (capIconI) capIconI.className = 'fas fa-lock';
         if (btn) btn.disabled = false;
     } else {
         bar.className = 'precision-lock-bar waiting';
         bar.querySelector('.plb-icon').className = 'fas fa-lock-open plb-icon';
         status.innerHTML = `<span class="plb-val">±${accuracy.toFixed(1)}m</span> — aguardando ≤ ${precisionLimit}m`;
-        if (statusMini) statusMini.innerHTML = `±${accuracy.toFixed(1)}m — aguardando ≤ ${precisionLimit}m`;
-        if (iconMini) { iconMini.className = 'fas fa-lock-open'; iconMini.style.color = 'var(--warn)'; }
+        if (capIcon) { capIcon.className = 'ws-map-icon-btn cap-precision-btn waiting'; capIcon.title = `Trava de Precisão: aguardando ≤ ${precisionLimit}m (atual ±${accuracy.toFixed(1)}m) — toque para configurar`; }
+        if (capIconI) capIconI.className = 'fas fa-lock-open';
         if (btn) btn.disabled = true;
     }
 }
