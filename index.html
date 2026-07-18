@@ -81,7 +81,7 @@ body{
   font-family:var(--mono) !important; font-size:10.5px !important; padding:1px 6px !important;
   border-top:1px solid var(--border) !important;
 }
-.leaflet-bottom.leaflet-left{margin-bottom:8px !important;}
+.leaflet-top.leaflet-left{margin-top: calc(var(--safe-top) + 70px) !important;}
 
 /* ---------- TOP BAR ---------- */
 #topbar{
@@ -1067,7 +1067,7 @@ function setBaseLayer(key){
   document.querySelectorAll('.bm-opt').forEach(function(o){ o.classList.toggle('sel', o.dataset.layer===key); });
 }
 setBaseLayer('satellite');
-L.control.scale({ metric:true, imperial:false, position:'bottomleft', maxWidth:120 }).addTo(map);
+L.control.scale({ metric:true, imperial:false, position:'topleft', maxWidth:120 }).addTo(map);
 
 /* ---------- Download de área para uso offline ---------- */
 function tileXY(lon, lat, z){
